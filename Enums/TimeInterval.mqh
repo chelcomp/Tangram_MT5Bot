@@ -1,0 +1,141 @@
+//+------------------------------------------------------------------+
+//|                                                      PriceAction |
+//|                        Copyright 2020, MetaQuotes Software Corp. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
+enum ENUM_TIME_INTERVAL
+   {
+    TIME_INTERVAL_0000, // -
+    TIME_INTERVAL_0900, // 9:00
+    TIME_INTERVAL_0905, // 9:05
+    TIME_INTERVAL_0910, // 9:10
+    TIME_INTERVAL_0915, // 9:15
+    TIME_INTERVAL_0920, // 9:20
+    TIME_INTERVAL_0925, // 9:25
+    TIME_INTERVAL_0930, // 9:30
+    TIME_INTERVAL_0935, // 9:35
+    TIME_INTERVAL_0940, // 9:40
+    TIME_INTERVAL_0945, // 9:45
+    TIME_INTERVAL_0950, // 9:50
+    TIME_INTERVAL_0955, // 9:55
+    TIME_INTERVAL_1000, // 10:00
+    TIME_INTERVAL_1005, // 10:05
+    TIME_INTERVAL_1010, // 10:10
+    TIME_INTERVAL_1015, // 10:15
+    TIME_INTERVAL_1020, // 10:20
+    TIME_INTERVAL_1025, // 10:25
+    TIME_INTERVAL_1030, // 10:30
+    TIME_INTERVAL_1035, // 10:35
+    TIME_INTERVAL_1040, // 10:40
+    TIME_INTERVAL_1045, // 10:45
+    TIME_INTERVAL_1050, // 10:50
+    TIME_INTERVAL_1055, // 10:55
+    TIME_INTERVAL_1100, // 11:00
+    TIME_INTERVAL_1105, // 11:05
+    TIME_INTERVAL_1110, // 11:10
+    TIME_INTERVAL_1115, // 11:15
+    TIME_INTERVAL_1120, // 11:20
+    TIME_INTERVAL_1125, // 11:25
+    TIME_INTERVAL_1130, // 11:30
+    TIME_INTERVAL_1135, // 11:35
+    TIME_INTERVAL_1140, // 11:40
+    TIME_INTERVAL_1145, // 11:45
+    TIME_INTERVAL_1150, // 11:50
+    TIME_INTERVAL_1155, // 11:55
+    TIME_INTERVAL_1200, // 12:00
+    TIME_INTERVAL_1205, // 12:05
+    TIME_INTERVAL_1210, // 12:10
+    TIME_INTERVAL_1215, // 12:15
+    TIME_INTERVAL_1220, // 12:20
+    TIME_INTERVAL_1225, // 12:25
+    TIME_INTERVAL_1230, // 12:30
+    TIME_INTERVAL_1235, // 12:35
+    TIME_INTERVAL_1240, // 12:40
+    TIME_INTERVAL_1245, // 12:45
+    TIME_INTERVAL_1250, // 12:50
+    TIME_INTERVAL_1255, // 12:55
+    TIME_INTERVAL_1300, // 13:00
+    TIME_INTERVAL_1305, // 13:05
+    TIME_INTERVAL_1310, // 13:10
+    TIME_INTERVAL_1315, // 13:15
+    TIME_INTERVAL_1320, // 13:20
+    TIME_INTERVAL_1325, // 13:25
+    TIME_INTERVAL_1330, // 13:30
+    TIME_INTERVAL_1335, // 13:35
+    TIME_INTERVAL_1340, // 13:40
+    TIME_INTERVAL_1345, // 13:45
+    TIME_INTERVAL_1350, // 13:50
+    TIME_INTERVAL_1355, // 13:55
+    TIME_INTERVAL_1400, // 14:00
+    TIME_INTERVAL_1405, // 14:05
+    TIME_INTERVAL_1410, // 14:10
+    TIME_INTERVAL_1415, // 14:15
+    TIME_INTERVAL_1420, // 14:20
+    TIME_INTERVAL_1425, // 14:25
+    TIME_INTERVAL_1430, // 14:30
+    TIME_INTERVAL_1435, // 14:35
+    TIME_INTERVAL_1440, // 14:40
+    TIME_INTERVAL_1445, // 14:45
+    TIME_INTERVAL_1450, // 14:50
+    TIME_INTERVAL_1455, // 14:55
+    TIME_INTERVAL_1500, // 15:00
+    TIME_INTERVAL_1505, // 15:05
+    TIME_INTERVAL_1510, // 15:10
+    TIME_INTERVAL_1515, // 15:15
+    TIME_INTERVAL_1520, // 15:20
+    TIME_INTERVAL_1525, // 15:25
+    TIME_INTERVAL_1530, // 15:30
+    TIME_INTERVAL_1535, // 15:35
+    TIME_INTERVAL_1540, // 15:40
+    TIME_INTERVAL_1545, // 15:45
+    TIME_INTERVAL_1550, // 15:50
+    TIME_INTERVAL_1555, // 15:55
+    TIME_INTERVAL_1600, // 16:00
+    TIME_INTERVAL_1605, // 16:05
+    TIME_INTERVAL_1610, // 16:10
+    TIME_INTERVAL_1615, // 16:15
+    TIME_INTERVAL_1620, // 16:20
+    TIME_INTERVAL_1625, // 16:25
+    TIME_INTERVAL_1630, // 16:30
+    TIME_INTERVAL_1635, // 16:35
+    TIME_INTERVAL_1640, // 16:40
+    TIME_INTERVAL_1645, // 16:45
+    TIME_INTERVAL_1650, // 16:50
+    TIME_INTERVAL_1655, // 16:55
+    TIME_INTERVAL_1700, // 17:00
+    TIME_INTERVAL_1705, // 17:05
+    TIME_INTERVAL_1710, // 17:10
+    TIME_INTERVAL_1715, // 17:15
+    TIME_INTERVAL_1720, // 17:20
+    TIME_INTERVAL_1725, // 17:25
+    TIME_INTERVAL_1730, // 17:30
+    TIME_INTERVAL_1735, // 17:35
+    TIME_INTERVAL_1740, // 17:40
+    TIME_INTERVAL_1745, // 17:45
+    TIME_INTERVAL_1750, // 17:50
+    TIME_INTERVAL_1755, // 17:55
+    TIME_INTERVAL_1800, // 18:00
+    TIME_INTERVAL_1805, // 18:05
+    TIME_INTERVAL_1810, // 18:10
+    TIME_INTERVAL_1815, // 18:15
+    TIME_INTERVAL_1820, // 18:20
+    TIME_INTERVAL_1825, // 18:25
+    TIME_INTERVAL_1830, // 18:30
+    TIME_INTERVAL_1835, // 18:35
+    TIME_INTERVAL_1840, // 18:40
+    TIME_INTERVAL_1845, // 18:45
+    TIME_INTERVAL_1850, // 18:50
+    TIME_INTERVAL_1855, // 18:55
+    TIME_INTERVAL_1900, // 19:00
+   };
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+datetime zEnumToDateTime(ENUM_TIME_INTERVAL timeInterval)
+   {
+    string auxTime1 = EnumToString(timeInterval);
+    datetime auxTime2 = StringToTime(StringFormat("1970.01.01 %s:%s", StringSubstr(auxTime1, 14, 2), StringSubstr(auxTime1, 16, 2)));
+    return(auxTime2);
+   }
+//+------------------------------------------------------------------+
