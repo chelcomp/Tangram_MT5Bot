@@ -18,8 +18,8 @@ enum ENUM_STOP_AFTER_X_DEALS
 input group "Global Stops"
 input double RISK_Daily_Stop_Loss_Money = NULL;                                       // Stop Loss $
 input double RISK_Daily_Stop_Gain_Money = NULL;                                       // Stop Gain $
-input ENUM_STOP_AFTER_X_DEALS RISK_Stop_After_X_Deals_Mode = STOP_AFTER_X_DEALS_NONE; // Stop after X Trades If Daily Balance
-input int RISK_Stop_After_X_Deals = NULL;                                             // Stop after X Deals
+input ENUM_STOP_AFTER_X_DEALS RISK_Stop_After_X_Deals_Mode = STOP_AFTER_X_DEALS_NONE; // Stop After X Trades If Daily Balance
+input int    RISK_Stop_After_X_Deals = NULL;                                          // Stop After X Deals
 input double RISK_Daily_Breakeven_Activation = 30.0;                                  // Daily Breakeven Activation $
 input double RISK_Daily_Breakeven_Max_Decline = 10.0;                                 // Daily Breakeven Max Decline $
 
@@ -32,13 +32,17 @@ input ENUM_TIME_INTERVAL TIME_Daily_Start  = TIME_INTERVAL_0900; // Start time f
 //-- Lock Window 1
 input ENUM_TIME_INTERVAL TIME_Lock1_Begin  = TIME_INTERVAL_0000; // Lock Time 1: Begin
 input ENUM_TIME_INTERVAL TIME_Lock1_End    = TIME_INTERVAL_0000; // Lock Time 1: End
+input bool TIME_Lock1_Allow_Reverse = true;                      // Lock Time 2: Allow Reverse
 
 //-- Lock Window 2
 input ENUM_TIME_INTERVAL TIME_Lock2_Begin  = TIME_INTERVAL_0000; // Lock Time 2: Begin
 input ENUM_TIME_INTERVAL TIME_Lock2_End    = TIME_INTERVAL_0000; // Lock Time 2: End
+input bool TIME_Lock2_Allow_Reverse = true;                      // Lock Time 2: Allow Reverse
 
 input ENUM_TIME_INTERVAL TIME_Daily_Stop   = TIME_INTERVAL_1640; // End time for opening positions
 input ENUM_TIME_INTERVAL TIME_Daily_Finish = TIME_INTERVAL_1745; // Final Time Close All Positions
+
+
 
 static double RISK_Daily_Breakeven_Whatermark = 0;
 
@@ -109,7 +113,7 @@ bool zDailyRiskEvent()
 bool zCanOpenPositionTimeWindow()
    {
     datetime time_current = DateTime2Time(TimeCurrent());
-    
+
 //-- Check Start Time
     if(TIME_Daily_Start != TIME_INTERVAL_0000
        && zEnumToDateTime(TIME_Daily_Start) > time_current)
@@ -143,8 +147,42 @@ bool zCanOpenPositionTimeWindow()
    }
 
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
 void zREsetDailyRiskFlagVariables()
-{
+   {
     RISK_Daily_Breakeven_Whatermark = 0;
-}
+   }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool zCanReversePosition()
+   {
+    if(!OUT_Use_Reverse)
+        return false;
+
+    datetime time_current = DateTime2Time(TimeCurrent());
+    bool can_reverse = zCanOpenPositionTimeWindow();
+
+//-- Lock Time 1
+    if(TIME_Lock1_Begin != TIME_INTERVAL_0000 && TIME_Lock1_End != TIME_INTERVAL_0000
+       && TIME_Lock1_Allow_Reverse
+       && time_current >= zEnumToDateTime(TIME_Lock1_Begin)
+       && time_current <= zEnumToDateTime(TIME_Lock1_End)
+      )
+        can_reverse = true;
+
+//-- Lock Time 1
+    if(TIME_Lock2_Begin != TIME_INTERVAL_0000 && TIME_Lock2_End != TIME_INTERVAL_0000
+       && TIME_Lock2_Allow_Reverse
+       && time_current >= zEnumToDateTime(TIME_Lock2_Begin)
+       && time_current <= zEnumToDateTime(TIME_Lock2_End)
+      )
+        can_reverse = true;
+
+    return can_reverse;
+   }
 //+------------------------------------------------------------------+

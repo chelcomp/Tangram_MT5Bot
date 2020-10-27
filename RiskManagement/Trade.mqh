@@ -18,20 +18,20 @@ input group "Stop Loss"
 input double STOP_Loss = 100;                                     // Stop Loss
 
 input group "Take Profit"
-input ENUM_ORDER_MARKET_TYPE STOP_Gain_Order_Type = ORDER_MARKET_TYPE_MARKET;    // Gain Order Type
-input double STOP_Gain = 200;                                      // Stop Gain
+input ENUM_ORDER_MARKET_TYPE STOP_Gain_Order_Type = ORDER_MARKET_TYPE_MARKET;   // Gain Order Type
+input double STOP_Gain = 200;                                                   // Take Profit (Stop Gain)
 
 input group "Trailing Stop"
-input double TRAILING_Stop_Activation = 150;                       // Trailing Stop Activation
-input double TRAILING_Stop_Distance = 50;                          // Trailing Stop Movel Distance
+input double TRAILING_Stop_Activation = 150;                         // Trailing Stop: Activation
+input double TRAILING_Stop_Distance = 50;                            // Trailing Stop: Watermark Distance
 
 input group "Partial Profit"
-input double PARTIAL_Gain = 100;                                      // Partial Stop Gain
-input double PARTIAL_Gain_Volume_Percentage = 50;                     // Percentage ( % ) of Volume
-input bool   PARTIAL_Gain_Break_Even = true;                          // Enable Break Even
+input double PARTIAL_Gain = 100;                                      // Partial: Take Profit
+input double PARTIAL_Gain_Volume_Percentage = 50;                     // Partial: Percentage ( % ) of Volume
+input bool   PARTIAL_Gain_Break_Even = true;                          // Partial: Enable Breakeven
 
-static bool PARTIAL_Gain_Break_Triggered = true;                     // Enable Break Even
-static bool PARTIAL_Gain_Break_Even_Activate = false;
+static bool PARTIAL_Gain_Break_Triggered = true;                     
+static bool PARTIAL_Gain_Break_Even_Activate = false; 
 
 //+------------------------------------------------------------------+
 //|                                                                  |

@@ -49,6 +49,7 @@ CPositionInfo PositionInfo;
 #include "HelpFunctions/SymbolInfo.mqh"
 
 static bool g_is_new_candle, g_daily_risk_triggered;
+static int g_day_trade_count = 0;
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
@@ -87,50 +88,69 @@ void OnDeinit(const int reason)
     Comment("");
    }
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+double OnTester(void)
+   {
+//https://www.investopedia.com/articles/trading/04/091504.asp
+    double w = ((TesterStatistics(STAT_PROFIT_TRADES) + TesterStatistics(STAT_LOSS_TRADES)) > 0) ? TesterStatistics(STAT_PROFIT_TRADES) / (TesterStatistics(STAT_PROFIT_TRADES) + TesterStatistics(STAT_LOSS_TRADES)) : 0; // winning probability
+    double r = ((TesterStatistics(STAT_GROSS_LOSS) != 0) && (TesterStatistics(STAT_LOSS_TRADES) != 0) && (TesterStatistics(STAT_PROFIT_TRADES) != 0)) ? (TesterStatistics(STAT_GROSS_PROFIT) / TesterStatistics(STAT_PROFIT_TRADES)) / (-TesterStatistics(STAT_GROSS_LOSS) / TesterStatistics(STAT_LOSS_TRADES)) : 0; // Win/loss ratio;
+    double Kelly = (r != 0) ? w - ((1 - w) / r) : 0; // Kelly Criterion
+
+    double i  = 1;
+    if(SETTING_Backtesting_Expected_AVG_Deal_by_Day > 0)
+       {
+        double expected_deal_in_time = g_day_trade_count * SETTING_Backtesting_Expected_AVG_Deal_by_Day;
+        i = (TesterStatistics(STAT_DEALS) / expected_deal_in_time);
+       }
+    return(Kelly * i);
+   }
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-void zResetDailyVariables()
+void zCheckToAbortOptimization()
    {
-    static datetime zResetDailyVariables_previous_day = 0;
-    datetime current_day = iTime(_Symbol, PERIOD_D1, 0);
-
-    if(zResetDailyVariables_previous_day  != current_day)
+    if(IS_DEBUG_MODE || MQLInfoInteger(MQL_OPTIMIZATION))
        {
-        g_daily_risk_triggered = false;
-        zResetDailyVariables_previous_day = current_day;
-        zREsetDailyRiskFlagVariables();
+        bool stop = false;
+        if(SETTING_Backtesting_Stop_On_Negative_Equity
+           && AccountInfoDouble(ACCOUNT_EQUITY) < 0)
+            stop = true;
+
+        if(SETTING_Backtesting_Stop_On_Max_Drowndow_Percent > 0)
+           {
+            static double Max_Equity = 0;
+            Max_Equity  = MathMax(Max_Equity, AccountInfoDouble(ACCOUNT_EQUITY));
+            if(Max_Equity > 0)
+               {
+                double drawndown = (Max_Equity - AccountInfoDouble(ACCOUNT_EQUITY)) * 100 / Max_Equity;
+                if(drawndown > SETTING_Backtesting_Stop_On_Max_Drowndow_Percent)
+                    stop = true;
+               }
+           }
+
+        if(stop)
+           {
+            ExpertRemove();
+           }
        }
    }
+
 
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
    {
+    zCheckToAbortOptimization();
     PositionInfo.Select(_Symbol);
 
     g_is_new_candle = zIsNewCandle(TimeFrame);
     bool buy = false, sell = false, close = false;
 
     zResetDailyVariables();
-
-    if(SETTING_Backtesting_Stop_On_Negative_Equity
-       && AccountInfoDouble(ACCOUNT_EQUITY) < 0)
-        ExpertRemove();
-
-    if(SETTING_Backtesting_Stop_On_Max_Drowndow_Percent > 0)
-       {
-        static double Max_Equity = 0;
-        Max_Equity  = MathMax(Max_Equity, AccountInfoDouble(ACCOUNT_EQUITY));
-        if(Max_Equity > 0)
-           {
-            double drawndown = (Max_Equity - AccountInfoDouble(ACCOUNT_EQUITY)) * 100 / Max_Equity;
-            if(drawndown > SETTING_Backtesting_Stop_On_Max_Drowndow_Percent)
-                ExpertRemove();
-           }
-       }
 
 //-- Check Daily Risk Archievement
     if(!g_daily_risk_triggered)
@@ -145,8 +165,10 @@ void OnTick()
 
 //-- Normal Close
     close = zTradeCloseAllPositions();
+    bool can_reverse = zCanReversePosition();
+    bool can_open_position_time_window = zCanOpenPositionTimeWindow();
 
-    if(zCanOpenPositionTimeWindow())
+    if(can_open_position_time_window || can_reverse)
        {
         if(!close)
             zIndicatorsSignal(buy, sell, close);
@@ -171,8 +193,27 @@ void OnTick()
        }
 
 //-- Create new Order
-    if(buy || sell)
+    if(can_open_position_time_window
+       && (buy || sell))
         zCreateOrder(buy, sell);
+   }
+
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zResetDailyVariables()
+   {
+    static datetime zResetDailyVariables_previous_day = 0;
+    datetime current_day = iTime(_Symbol, PERIOD_D1, 0);
+
+    if(zResetDailyVariables_previous_day  != current_day)
+       {
+        g_daily_risk_triggered = false;
+        zResetDailyVariables_previous_day = current_day;
+        zREsetDailyRiskFlagVariables();
+        g_day_trade_count++;
+       }
    }
 
 

@@ -75,7 +75,8 @@ input int  OUT_Martingale_Times = 1; // Maximum number of consecutive losses wit
 sinput group "DAILY RISK MANAGEMENT ---------------------------------------------------"
 #include "../RiskManagement/Daily.mqh";
 
-input group "Setting"
+input group "Backtesting Setting (Custom Criteria)"
 //input long input_MagicNumber = -1; // Magic Number
-sinput bool SETTING_Backtesting_Stop_On_Negative_Equity = true; // Stop to backtesting when Equity is over ( When Account is Zero )
+sinput bool   SETTING_Backtesting_Stop_On_Negative_Equity = true;      // Stop to backtesting when Equity is over (When Account is Zero)
 sinput double SETTING_Backtesting_Stop_On_Max_Drowndow_Percent = 30; // Stop to backtestig when Drowndown higher than %
+sinput double SETTING_Backtesting_Expected_AVG_Deal_by_Day = 1.5;    // Average deal by day to ranking up
