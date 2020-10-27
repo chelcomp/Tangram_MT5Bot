@@ -12,6 +12,7 @@ enum ENUM_SAR_USE_MODE
 
 input group "10. SAR Parabolic"
 input bool SAR_Enable = false;                                                          // Enable SAR
+input bool SAR_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE SAR_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_SAR_USE_MODE SAR_Use_Mode = SAR_USE_MODE_DIRECTION_CHANGE;                   // Use Mode
 //sinput double  SAR_Acceleration_Step = 0;                                             // Acceleration Factor
@@ -92,6 +93,11 @@ ENUM_INDICATOR_SIGNAL zSAR()
             if(SAR_Buffer[1] < rates[1].close && SAR_Buffer[2] > rates[2].close)
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
+
+    if(SAR_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
 
     return indicator_signal;
    }

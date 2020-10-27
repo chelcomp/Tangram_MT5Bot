@@ -100,6 +100,7 @@ void zResetDailyVariables()
        {
         g_daily_risk_triggered = false;
         zResetDailyVariables_previous_day = current_day;
+        zREsetDailyRiskFlagVariables();
        }
    }
 
@@ -114,6 +115,22 @@ void OnTick()
     bool buy = false, sell = false, close = false;
 
     zResetDailyVariables();
+
+    if(SETTING_Backtesting_Stop_On_Negative_Equity
+       && AccountInfoDouble(ACCOUNT_EQUITY) < 0)
+        ExpertRemove();
+
+    if(SETTING_Backtesting_Stop_On_Max_Drowndow_Percent > 0)
+       {
+        static double Max_Equity = 0;
+        Max_Equity  = MathMax(Max_Equity, AccountInfoDouble(ACCOUNT_EQUITY));
+        if(Max_Equity > 0)
+           {
+            double drawndown = (Max_Equity - AccountInfoDouble(ACCOUNT_EQUITY)) * 100 / Max_Equity;
+            if(drawndown > SETTING_Backtesting_Stop_On_Max_Drowndow_Percent)
+                ExpertRemove();
+           }
+       }
 
 //-- Check Daily Risk Archievement
     if(!g_daily_risk_triggered)

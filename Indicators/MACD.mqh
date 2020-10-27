@@ -17,6 +17,7 @@ enum ENUM_MACD_AVERAGE_TYPE
 
 input group "3. MACD"
 input bool MACD_Enable = false;                                                          // Enable MACD
+input bool MACD_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE MACD_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_MACD_USE_MODE MACD_Use_Mode = MACD_USE_MODE_ABOVE_BELOW;                      // Use Mode
 input ENUM_APPLIED_PRICE MACD_Applied_Price = PRICE_CLOSE;                               // Applied Price
@@ -113,6 +114,11 @@ ENUM_INDICATOR_SIGNAL zMACD()
                {
                 indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
                }
+
+    if(MACD_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
 
     return indicator_signal;
    }

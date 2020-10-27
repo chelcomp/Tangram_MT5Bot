@@ -11,6 +11,7 @@ enum ENUM_RSI_USE_MODE
 
 input group "7. RSI"
 input bool RSI_Enable = false;                                                          // Enable RSI
+input bool RSI_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE RSI_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_RSI_USE_MODE RSI_Use_Mode = RSI_USE_MODE_ABOVE_BELOW;                        // Use Mode
 input ENUM_APPLIED_PRICE RSI_Applied_Price = PRICE_CLOSE;                               // Applied Price
@@ -91,6 +92,11 @@ ENUM_INDICATOR_SIGNAL zRSI()
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
 
+    if(RSI_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
+                           
     return indicator_signal;
    }
 //+------------------------------------------------------------------+

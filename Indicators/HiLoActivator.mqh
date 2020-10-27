@@ -13,6 +13,7 @@ enum ENUM_HILO_USE_MODE
 
 input group "2. HiLo Activator"
 input bool HILO_Enable = false;                                                           // Enable HILO
+input bool HILO_Reverse = false;                                                           // Reverse
 input ENUM_INDICATOR_OPERATION_MODE HILO_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH;  // Operation Mode
 input ENUM_HILO_USE_MODE HILO_Use_Mode = HILO_USE_MODE_CROSSING;                          // Use Mode
 input int HILO_Periods = 9;                                                               // Periods
@@ -114,6 +115,12 @@ ENUM_INDICATOR_SIGNAL zHILO()
             if(HILO_Buffer[1] < 0 && HILO_Buffer[2] > 0)
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
+
+    if(HILO_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
+
     return indicator_signal;
    }
 

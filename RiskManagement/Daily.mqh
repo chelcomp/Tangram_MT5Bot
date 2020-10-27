@@ -1,3 +1,8 @@
+//+------------------------------------------------------------------+
+//|                                                          Tangram |
+//|                        Copyright 2020, MetaQuotes Software Corp. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
 
 enum ENUM_STOP_AFTER_X_DEALS
    {
@@ -15,14 +20,27 @@ input double RISK_Daily_Stop_Loss_Money = NULL;                                 
 input double RISK_Daily_Stop_Gain_Money = NULL;                                       // Stop Gain $
 input ENUM_STOP_AFTER_X_DEALS RISK_Stop_After_X_Deals_Mode = STOP_AFTER_X_DEALS_NONE; // Stop after X Trades If Daily Balance
 input int RISK_Stop_After_X_Deals = NULL;                                             // Stop after X Deals
+input double RISK_Daily_Breakeven_Activation = 30.0;                                  // Daily Breakeven Activation $
+input double RISK_Daily_Breakeven_Max_Decline = 10.0;                                 // Daily Breakeven Max Decline $
 
 //+------------------------------------------------------------------+
 //|  Time windows                                                    |
 //+------------------------------------------------------------------+
 input group "Time"
-input ENUM_TIME_INTERVAL TIME_Daily_Start  = TIME_INTERVAL_0900; // Allow to Open Position
-input ENUM_TIME_INTERVAL TIME_Daily_Stop   = TIME_INTERVAL_1640; // Stop Opening Position
-input ENUM_TIME_INTERVAL TIME_Daily_Finish = TIME_INTERVAL_1745; // Close All Positions
+input ENUM_TIME_INTERVAL TIME_Daily_Start  = TIME_INTERVAL_0900; // Start time for opening positions
+
+//-- Lock Window 1
+input ENUM_TIME_INTERVAL TIME_Lock1_Begin  = TIME_INTERVAL_0000; // Lock Time 1: Begin
+input ENUM_TIME_INTERVAL TIME_Lock1_End    = TIME_INTERVAL_0000; // Lock Time 1: End
+
+//-- Lock Window 2
+input ENUM_TIME_INTERVAL TIME_Lock2_Begin  = TIME_INTERVAL_0000; // Lock Time 2: Begin
+input ENUM_TIME_INTERVAL TIME_Lock2_End    = TIME_INTERVAL_0000; // Lock Time 2: End
+
+input ENUM_TIME_INTERVAL TIME_Daily_Stop   = TIME_INTERVAL_1640; // End time for opening positions
+input ENUM_TIME_INTERVAL TIME_Daily_Finish = TIME_INTERVAL_1745; // Final Time Close All Positions
+
+static double RISK_Daily_Breakeven_Whatermark = 0;
 
 //+------------------------------------------------------------------+
 //|  Check all daily Risk parameters                                 |
@@ -61,6 +79,21 @@ bool zDailyRiskEvent()
             return true;
        }
 
+//-- Daily Breakeven
+    if(RISK_Daily_Breakeven_Activation > 0 && RISK_Daily_Breakeven_Max_Decline > 0)
+       {
+        if(RISK_Daily_Breakeven_Whatermark == 0
+           && daily_net_profit >= RISK_Daily_Breakeven_Activation)
+            RISK_Daily_Breakeven_Whatermark = daily_net_profit;
+
+        if(RISK_Daily_Breakeven_Whatermark > 0)
+           {
+            RISK_Daily_Breakeven_Whatermark  = MathMax(RISK_Daily_Breakeven_Whatermark, daily_net_profit);
+            if(daily_net_profit + RISK_Daily_Breakeven_Max_Decline < RISK_Daily_Breakeven_Whatermark)
+                return true;
+           }
+       }
+
 //-- Finish day time
     if(TIME_Daily_Finish != TIME_INTERVAL_0000
        && DateTime2Time(TimeCurrent()) >= zEnumToDateTime(TIME_Daily_Finish))
@@ -69,16 +102,14 @@ bool zDailyRiskEvent()
     return false;
    }
 
-
-
 //+------------------------------------------------------------------+
 //|  Validate the Start, Stop and Finish time window                 |
 //|  Result: True = Allow to open new positions                      |
 //+------------------------------------------------------------------+
 bool zCanOpenPositionTimeWindow()
    {
-
     datetime time_current = DateTime2Time(TimeCurrent());
+    
 //-- Check Start Time
     if(TIME_Daily_Start != TIME_INTERVAL_0000
        && zEnumToDateTime(TIME_Daily_Start) > time_current)
@@ -94,7 +125,26 @@ bool zCanOpenPositionTimeWindow()
        && time_current >= zEnumToDateTime(TIME_Daily_Finish))
         return false;
 
+//-- Lock Time 1
+    if(TIME_Lock1_Begin != TIME_INTERVAL_0000 && TIME_Lock1_End != TIME_INTERVAL_0000
+       && time_current >= zEnumToDateTime(TIME_Lock1_Begin)
+       && time_current <= zEnumToDateTime(TIME_Lock1_End)
+      )
+        return false;
+
+//-- Lock Time 1
+    if(TIME_Lock2_Begin != TIME_INTERVAL_0000 && TIME_Lock2_End != TIME_INTERVAL_0000
+       && time_current >= zEnumToDateTime(TIME_Lock2_Begin)
+       && time_current <= zEnumToDateTime(TIME_Lock2_End)
+      )
+        return false;
+
     return true;
    }
 
+
+void zREsetDailyRiskFlagVariables()
+{
+    RISK_Daily_Breakeven_Whatermark = 0;
+}
 //+------------------------------------------------------------------+

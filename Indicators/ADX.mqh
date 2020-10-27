@@ -19,6 +19,7 @@ enum ENUM_ADX_TENDENCY_FILTER
 
 input group "4. ADX - DI+/DI-"
 input bool ADX_Enable = false;                                                          // Enable ADX
+input bool ADX_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE ADX_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_ADX_USE_MODE ADX_Use_Mode = ADX_USE_MODE_ABOVE_BELOW;                        // Use Mode
 input int ADX_Period = 14;                                                              // Period
@@ -135,6 +136,12 @@ ENUM_INDICATOR_SIGNAL zADX()
            && ADX_Buffer[1] > ADX_Buffer[2])
             indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
        }
+
+    if(ADX_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
+
     return indicator_signal;
    }
 

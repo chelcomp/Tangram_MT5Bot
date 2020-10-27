@@ -13,6 +13,7 @@ enum ENUM_MA_USE_MODE
 
 input group "1. Movel Average"
 input bool MA_Enable = false;                                                          // Enable MA
+input bool MA_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE MA_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_MA_USE_MODE MA_Use_Mode = MA_USE_MODE_ABOVE_BELOW;                          // Use Mode
 
@@ -104,6 +105,12 @@ ENUM_INDICATOR_SIGNAL zMA()
             if(MA_Short_Buffer[1] > MA_Long_Buffer[1] && MA_Short_Buffer[2] < MA_Long_Buffer[2])
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
+
+    if(MA_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
+
     return indicator_signal;
    }
 

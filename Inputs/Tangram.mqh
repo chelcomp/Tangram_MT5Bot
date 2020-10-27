@@ -9,7 +9,7 @@
 enum ENUM_GRAPH_TYPE
    {
     GRAPH_TYPE_CANDLE_STICK, // CandleStick
-    GRAPH_TYPE_HEIKINASHI   // Heikin-Ashi
+  //  GRAPH_TYPE_HEIKINASHI   // Heikin-Ashi
    };
 
 enum enum_SmoothingType
@@ -35,11 +35,13 @@ input string BotName = ""; // Bot Name
 input group "Graphic";
 input ENUM_TIMEFRAMES TimeFrame = PERIOD_M5;                // Timeframe
 //+------------------------------------------------------------------+
+/*
 input ENUM_GRAPH_TYPE GraphType = GRAPH_TYPE_CANDLE_STICK;  // Type
 input group "Graphic Heikin-Ashi"
 input bool input_UseSmoothing = false;                        // Use Smoothing
 input enum_SmoothingType input_SmoothingType = stExponential; // Smoothing Type
 input int input_SmoothingPeriods = 3;                         // Smoothing Periods
+*/
 //+------------------------------------------------------------------
 
 input group "Order Management"
@@ -48,11 +50,10 @@ input ENUM_OPERATION_DIRECTION ORDER_Operation_Direction = OPERATION_DIRECTION_B
 input double ORDER_Volume = 2;                                                                 // Volume
 input bool ORDER_Block_New_Inputs_On_Same_Day = false;                                         // Block new inputs on the same day after one output
 //+------------------------------------------------------------------+
-sinput string _split3; //--
+
 sinput group "TECHNICAL INDICATORS ---------------------------------------------------"
 //-- "Moving Average"
 #include "../Indicators/MovingAverage.mqh"
-
 #include "../Indicators/HiLoActivator.mqh"
 #include "../Indicators/MACD.mqh"
 #include "../Indicators/ADX.mqh"
@@ -74,5 +75,7 @@ input int  OUT_Martingale_Times = 1; // Maximum number of consecutive losses wit
 sinput group "DAILY RISK MANAGEMENT ---------------------------------------------------"
 #include "../RiskManagement/Daily.mqh";
 
-//input group "Setting"
+input group "Setting"
 //input long input_MagicNumber = -1; // Magic Number
+sinput bool SETTING_Backtesting_Stop_On_Negative_Equity = true; // Stop to backtesting when Equity is over ( When Account is Zero )
+sinput double SETTING_Backtesting_Stop_On_Max_Drowndow_Percent = 30; // Stop to backtestig when Drowndown higher than %

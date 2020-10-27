@@ -13,6 +13,7 @@ enum ENUM_BB_USE_MODE
 
 input group "8. Bolliger's Band"
 input bool BB_Enable = false;                                                          // Enable BB
+input bool BB_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE BB_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_BB_USE_MODE BB_Use_Mode = BB_USE_MODE_ABOVE_BELOW;                          // Use Mode
 input ENUM_APPLIED_PRICE BB_Applied_Price = PRICE_CLOSE;                               // Applied Price
@@ -60,7 +61,7 @@ void zBBDeinit()
    {
     if(BB_Handler != INVALID_HANDLE)
         IndicatorRelease(BB_Handler);
-        
+
     ArrayFree(BB_Upper_Buffer);
     ArrayFree(BB_Middle_Buffer);
     ArrayFree(BB_Lower_Buffer);
@@ -98,6 +99,12 @@ ENUM_INDICATOR_SIGNAL zBB()
             if(BB_Lower_Buffer[2] > rates[2].close && BB_Lower_Buffer[1] < rates[1].close)
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
+
+    if(BB_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
+
     return indicator_signal;
    }
 

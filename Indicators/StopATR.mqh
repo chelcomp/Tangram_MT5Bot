@@ -1,3 +1,8 @@
+//+------------------------------------------------------------------+
+//|                                                          Tangram |
+//|                        Copyright 2020, MetaQuotes Software Corp. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
 
 #include "../HelpFunctions/Array.mqh"
 
@@ -15,6 +20,7 @@ enum ENUM_ATR_AVERAGE_TYPE
 
 input group "9. Stop ATR"
 input bool ATR_Enable = false;                                                          // Enable ATR
+input bool ATR_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE ATR_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_ATR_USE_MODE ATR_Use_Mode = ATR_USE_MODE_DIRECTION_CHANGE;                   // Use Mode
 sinput ENUM_ATR_AVERAGE_TYPE ATR_AVERAGE_TYPE = ATR_AVERAGE_TYPE_SIMPLE;               // Average Type
@@ -124,6 +130,11 @@ ENUM_INDICATOR_SIGNAL zATR()
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
 
+    if(ATR_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
+                           
     return indicator_signal;
    }
 //+------------------------------------------------------------------+

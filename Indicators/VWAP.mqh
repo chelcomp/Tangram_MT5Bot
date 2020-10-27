@@ -1,3 +1,8 @@
+//+------------------------------------------------------------------+
+//|                                                          Tangram |
+//|                        Copyright 2020, MetaQuotes Software Corp. |
+//|                                             https://www.mql5.com |
+//+------------------------------------------------------------------+
 enum ENUM_VWAP_USE_MODE
    {
     VWAP_USE_MODE_SELL_ABOVE_BUY_BELOW, // Sell Above of VWAP / Buy Below VWAP
@@ -7,6 +12,7 @@ enum ENUM_VWAP_USE_MODE
 
 input group "6. VWAP Activator"
 input bool VWAP_Enable = false;                                                           // Enable VWAP
+input bool VWAP_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE VWAP_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH;  // Operation Mode
 input ENUM_VWAP_USE_MODE VWAP_Use_Mode = VWAP_USE_MODE_SELL_ABOVE_BUY_BELOW;              // Use Mode
 
@@ -62,7 +68,7 @@ ENUM_INDICATOR_SIGNAL zVWAP()
         price_volume += rates[i].close * rates[i].real_volume;
         volume += rates[i].real_volume;
        }
-       
+
     if(price_volume == 0 || volume == 0)
         return indicator_signal;
 
@@ -95,6 +101,11 @@ ENUM_INDICATOR_SIGNAL zVWAP()
                     if(rates[1].close > vwap && rates[2].close < vwap)
                         indicator_signal = INDICATOR_SIGNAL_BUY;
                }
+
+    if(VWAP_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
 
     return indicator_signal;
    }

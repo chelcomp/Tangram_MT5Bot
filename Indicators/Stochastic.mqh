@@ -12,6 +12,7 @@ enum ENUM_STOC_USE_MODE
 
 input group "5. Stochastic"
 input bool STOC_Enable = false;                                                          // Enable STOC
+input bool STOC_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE STOC_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_STOC_USE_MODE STOC_Use_Mode = STOC_USE_MODE_ABOVE_BELOW;                      // Use Mode
 input int  STOC_K_Period = 5;                                                            // Period
@@ -100,7 +101,7 @@ ENUM_INDICATOR_SIGNAL zSTOC()
     if(STOC_Filter)
        {
         if(indicator_signal == INDICATOR_SIGNAL_SELL // lower
-           && STOC_K_Buffer[1] > STOC_Level_Overbought) 
+           && STOC_K_Buffer[1] > STOC_Level_Overbought)
             indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
 
         if(indicator_signal == INDICATOR_SIGNAL_BUY // Higher
@@ -108,6 +109,12 @@ ENUM_INDICATOR_SIGNAL zSTOC()
             indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
 
        }
+
+    if(STOC_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
+
     return indicator_signal;
    }
 
