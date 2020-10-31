@@ -98,10 +98,10 @@ int zTodayClosedDealsTotal()
 //+------------------------------------------------------------------+
 ENUM_DEAL_TYPE zLastDealType()
    {
-    int history_deals_total = HistoryDealsTotal();
+    int history_deals_total = zTodayDealsTotal();
 
 //-- Run backward the Hystory until to get a deal buy or sell
-    for(uint i = history_deals_total - 1; i > 0; i--)
+    for(uint i = history_deals_total - 2; i > 0; i--)
        {
         ulong ticket =  HistoryDealGetTicket(i);
         ENUM_DEAL_TYPE last_deal_type = (ENUM_DEAL_TYPE)HistoryDealGetInteger(ticket, DEAL_TYPE);

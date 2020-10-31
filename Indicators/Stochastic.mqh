@@ -19,8 +19,8 @@ input int  STOC_K_Period = 5;                                                   
 input int  STOC_Period_Smothled = 3;                                                      // %K Suavisation Period
 input int  STOC_D_Period = 3;                                                            // %D Suavisation Period
 input bool STOC_Filter = true;                                                           // Enable Filter
-input int  STOC_Level_Overbought = 20;                                                   // Level Overbought(Lower)
-input int  STOC_Level_Oversold = 80;                                                     // Level Oversold (Higher)
+input int  STOC_Level_Oversold = 20;                                                     // Level Oversold (Lower)
+input int  STOC_Level_Overbought = 80;                                                   // Level Overbought(Higher)
 int STOC_Handler;
 double STOC_K_Buffer[];
 double STOC_D_Buffer[];
@@ -37,7 +37,7 @@ int zSTOCInit(ENUM_TIMEFRAMES timeframe)
         ArraySetAsSeries(STOC_D_Buffer, true);
 
         //--- create handle of the indicator
-        STOC_Handler = iStochastic(_Symbol, timeframe, STOC_K_Period, STOC_D_Period, STOC_Period_Smothled, MODE_SMMA, STO_LOWHIGH);
+        STOC_Handler = iStochastic(_Symbol, timeframe, STOC_K_Period, STOC_D_Period, STOC_Period_Smothled, MODE_SMA, STO_LOWHIGH);
 
         //--- if the handle is not created
         if(STOC_Handler == INVALID_HANDLE)
@@ -87,27 +87,34 @@ ENUM_INDICATOR_SIGNAL zSTOC()
        }
     else // if(STOC_Use_Mode == STOC_USE_MODE_CROSSING)
        {
-        if(STOC_K_Buffer[1] < STOC_D_Buffer[1] && STOC_K_Buffer[2] > STOC_D_Buffer[2])
+        if(STOC_K_Buffer[1] < STOC_D_Buffer[1] && STOC_K_Buffer[2] >= STOC_D_Buffer[2])
             indicator_signal = INDICATOR_SIGNAL_SELL;
         else
-            if(STOC_K_Buffer[1] > STOC_D_Buffer[1] && STOC_K_Buffer[2] < STOC_D_Buffer[2])
+            if(STOC_K_Buffer[1] > STOC_D_Buffer[1] && STOC_K_Buffer[2] <= STOC_D_Buffer[2])
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
 
+//STOC_Level_Overbought = 80; // Level Overbought(Higher)
+//STOC_Level_Oversold   = 20; // Level Oversold  (Lower)
 
-//STOC_Level_Overbought = 20; // Level Overbought(Lower)
-//STOC_Level_Oversold   = 80; // Level Oversold  (Higher)
 
     if(STOC_Filter)
        {
         if(indicator_signal == INDICATOR_SIGNAL_SELL // lower
-           && STOC_K_Buffer[1] > STOC_Level_Overbought)
-            indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
+           || indicator_signal == INDICATOR_SIGNAL_BUY) // Higher
+            if(STOC_K_Buffer[1] < STOC_Level_Overbought
+               && STOC_K_Buffer[1] > STOC_Level_Oversold)
+                indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
 
-        if(indicator_signal == INDICATOR_SIGNAL_BUY // Higher
-           && STOC_K_Buffer[1] < STOC_Level_Oversold)
-            indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
+            else
+                if(indicator_signal == INDICATOR_SIGNAL_SELL
+                   && STOC_K_Buffer[1] < STOC_Level_Overbought)
+                    indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
 
+                else
+                    if(indicator_signal == INDICATOR_SIGNAL_BUY
+                       && STOC_K_Buffer[1] > STOC_Level_Oversold)
+                        indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
        }
 
     if(STOC_Reverse)

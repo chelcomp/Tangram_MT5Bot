@@ -16,25 +16,33 @@ input ENUM_INDICATOR_OPERATION_MODE RSI_Operation_Mode = INDICATOR_OPERATION_MOD
 input ENUM_RSI_USE_MODE RSI_Use_Mode = RSI_USE_MODE_ABOVE_BELOW;                        // Use Mode
 input ENUM_APPLIED_PRICE RSI_Applied_Price = PRICE_CLOSE;                               // Applied Price
 input int RSI_Periods = 14;                                                             // Periods
-input int RSI_Level_Overbought = 30;                                                    // Level Overbought(Lower)
-input int RSI_Level_Oversold = 70;                                                      // Level Oversold (Higher)
+input int RSI_Level_Oversold = 20;                                                      // Level Oversold (Lower)
+input int RSI_Level_Overbought = 80;                                                    // Level Overbought(Higher)
 
 int RSI_Handler;
+int HA_RSI_Handler;
 double RSI_Buffer[];
 
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int zRSIInit(ENUM_TIMEFRAMES timeframe)
+int zRSIInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
    {
     if(RSI_Enable)
        {
         ArraySetAsSeries(RSI_Buffer, true);
 
         //--- create handle of the indicator
-        RSI_Handler = iRSI(_Symbol, timeframe, RSI_Periods, RSI_Applied_Price);
-
+        if(!use_heikin_ashi)
+           {
+            RSI_Handler = iRSI(_Symbol, timeframe, RSI_Periods, RSI_Applied_Price);
+           }
+        else
+           {
+            HA_RSI_Handler = iCustom(_Symbol, timeframe, "CustomHeikenAshi", RSI_Applied_Price);
+            RSI_Handler = iRSI(_Symbol, timeframe, RSI_Periods, HA_RSI_Handler);
+           }
         //--- if the handle is not created
         if(RSI_Handler == INVALID_HANDLE)
            {
@@ -56,7 +64,10 @@ void zSTOCDeinit()
    {
     if(RSI_Handler != INVALID_HANDLE)
         IndicatorRelease(RSI_Handler);
-    
+
+    if(HA_RSI_Handler != INVALID_HANDLE)
+        IndicatorRelease(HA_RSI_Handler);
+
     ArrayFree(RSI_Buffer);
    }
 
@@ -72,23 +83,23 @@ ENUM_INDICATOR_SIGNAL zRSI()
     if(!FillArrayFromBuffer(RSI_Handler, 0, 0, 3, RSI_Buffer))
         return indicator_signal;
 
-//RSI_Level_Overbought = 20; // Level Overbought(Lower)
-//RSI_Level_Oversold = 80;   // Level Oversold (Higher)
+//RSI_Level_Overbought = 80; // Level Overbought(Higher)
+//RSI_Level_Oversold = 20;   // Level Oversold (Lower)
 
     if(RSI_Use_Mode == RSI_USE_MODE_ABOVE_BELOW)
        {
-        if(RSI_Buffer[1] > RSI_Level_Oversold)
+        if(RSI_Buffer[1] > RSI_Level_Overbought)
             indicator_signal = INDICATOR_SIGNAL_SELL;
         else
-            if(RSI_Buffer[1] < RSI_Level_Overbought)
+            if(RSI_Buffer[1] < RSI_Level_Oversold)
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
     else // if(RSI_Use_Mode == RSI_USE_MODE_CROSSING)
        {
-        if(RSI_Buffer[2] > RSI_Level_Oversold && RSI_Buffer[1] < RSI_Level_Oversold)
+        if(RSI_Buffer[2] > RSI_Level_Overbought && RSI_Buffer[1] < RSI_Level_Overbought)
             indicator_signal = INDICATOR_SIGNAL_SELL;
         else
-            if(RSI_Buffer[2] < RSI_Level_Overbought && RSI_Buffer[1] > RSI_Level_Overbought)
+            if(RSI_Buffer[2] < RSI_Level_Oversold && RSI_Buffer[1] > RSI_Level_Oversold)
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
 
@@ -96,7 +107,7 @@ ENUM_INDICATOR_SIGNAL zRSI()
         indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
                            : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
                            : indicator_signal;
-                           
+
     return indicator_signal;
    }
 //+------------------------------------------------------------------+

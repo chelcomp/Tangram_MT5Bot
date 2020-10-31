@@ -51,28 +51,39 @@ ENUM_INDICATOR_SIGNAL zVWAP()
     MqlRates rates[];
     ArraySetAsSeries(rates, true);
 
-    MqlDateTime current_day_begin;
-    TimeCurrent(current_day_begin);
-    current_day_begin.hour = 0;
-    current_day_begin.min = 0;
-    current_day_begin.sec = 0;
+    static datetime zVWAP_last_processed_date = 0;
+    static double zVWAP_price_volume = 0;
+    static long zVWAP_volume = 0;
 
-//--- Load buffers and
-    if(CopyRates(Symbol(), VWAP_Timeframe, StructToTime(current_day_begin), TimeCurrent(), rates) < 0)
-        return indicator_signal;
-
-    double price_volume = 0;
-    long volume = 0;
-    for(int i = ArraySize(rates) - 1; i > 0; i--)
+    if(zVWAP_last_processed_date == 0
+       || !IsTheSameDay(TimeCurrent(), zVWAP_last_processed_date))
        {
-        price_volume += rates[i].close * rates[i].real_volume;
-        volume += rates[i].real_volume;
+        MqlDateTime current_day_begin;
+        TimeCurrent(current_day_begin);
+        current_day_begin.hour = 0;
+        current_day_begin.min = 0;
+        current_day_begin.sec = 0;
+        zVWAP_last_processed_date = StructToTime(current_day_begin);
+        zVWAP_price_volume = 0;
+        zVWAP_volume = 0;
        }
 
-    if(price_volume == 0 || volume == 0)
+//--- Load buffers and
+    if(CopyRates(Symbol(), VWAP_Timeframe, zVWAP_last_processed_date, TimeCurrent(), rates) < 0)
         return indicator_signal;
 
-    double vwap = price_volume / volume;
+    zVWAP_last_processed_date = TimeCurrent();
+
+    for(int i = ArraySize(rates) - 1; i > 0; i--)
+       {
+        zVWAP_price_volume += rates[i].close * rates[i].real_volume;
+        zVWAP_volume += rates[i].real_volume;
+       }
+
+    if(zVWAP_price_volume == 0 || zVWAP_volume == 0)
+        return indicator_signal;
+
+    double vwap = zVWAP_price_volume / zVWAP_volume;
 
 
     if(VWAP_Use_Mode == VWAP_USE_MODE_SELL_ABOVE_BUY_BELOW)
@@ -93,6 +104,8 @@ ENUM_INDICATOR_SIGNAL zVWAP()
                     indicator_signal = INDICATOR_SIGNAL_BUY;
            }
         else
+           {
+            CopyRates(Symbol(), VWAP_Timeframe, 0, 3, rates);
             if(VWAP_Use_Mode == VWAP_USE_MODE_RUPTURE)
                {
                 if(rates[1].close < vwap && rates[2].close > vwap)
@@ -101,6 +114,7 @@ ENUM_INDICATOR_SIGNAL zVWAP()
                     if(rates[1].close > vwap && rates[2].close < vwap)
                         indicator_signal = INDICATOR_SIGNAL_BUY;
                }
+           }
 
     if(VWAP_Reverse)
         indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY

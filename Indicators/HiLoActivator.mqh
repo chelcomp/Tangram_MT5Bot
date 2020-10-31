@@ -20,6 +20,8 @@ input int HILO_Periods = 9;                                                     
 
 int HILO_Hi_Handler;
 int HILO_Lo_Handler;
+int HILO_HA_Hi_Handler;
+int HILO_HA_Lo_Handler;
 double HILO_Hi_Buffer[];
 double HILO_Lo_Buffer[];
 int HILO_Buffer[];
@@ -28,7 +30,7 @@ ENUM_TIMEFRAMES HILO_Timeframe;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int zHiLoInit(ENUM_TIMEFRAMES timeframe)
+int zHiLoInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
    {
     if(HILO_Enable)
        {
@@ -41,9 +43,18 @@ int zHiLoInit(ENUM_TIMEFRAMES timeframe)
         HILO_Timeframe = timeframe;
 
         //--- create handle of the indicator
-        HILO_Hi_Handler = iMA(_Symbol, timeframe, HILO_Periods, 1, MODE_SMA, PRICE_HIGH);
-        HILO_Lo_Handler = iMA(_Symbol, timeframe, HILO_Periods, 1, MODE_SMA, PRICE_LOW);
-
+        if(!use_heikin_ashi)
+           {
+            HILO_Hi_Handler = iMA(_Symbol, timeframe, HILO_Periods, 1, MODE_SMA, PRICE_HIGH);
+            HILO_Lo_Handler = iMA(_Symbol, timeframe, HILO_Periods, 1, MODE_SMA, PRICE_LOW);
+           }
+        else
+           {
+            HILO_HA_Hi_Handler = iCustom(_Symbol, timeframe, "CustomHeikenAshi", PRICE_HIGH);
+            HILO_Hi_Handler = iMA(_Symbol, timeframe, HILO_Periods, 1, MODE_SMA, HILO_HA_Hi_Handler);
+            HILO_HA_Lo_Handler = iCustom(_Symbol, timeframe, "CustomHeikenAshi", PRICE_LOW);
+            HILO_Lo_Handler = iMA(_Symbol, timeframe, HILO_Periods, 1, MODE_SMA, HILO_HA_Lo_Handler);
+           }
         //--- if the handle is not created
         if(HILO_Hi_Handler == INVALID_HANDLE
            || HILO_Lo_Handler == INVALID_HANDLE)
@@ -69,6 +80,12 @@ void zHiLoDeinit()
 
     if(HILO_Lo_Handler != INVALID_HANDLE)
         IndicatorRelease(HILO_Lo_Handler);
+
+    if(HILO_HA_Hi_Handler != INVALID_HANDLE)
+        IndicatorRelease(HILO_HA_Hi_Handler);
+
+    if(HILO_HA_Lo_Handler != INVALID_HANDLE)
+        IndicatorRelease(HILO_HA_Lo_Handler);
 
     ArrayFree(HILO_Hi_Buffer);
     ArrayFree(HILO_Lo_Buffer);

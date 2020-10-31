@@ -23,7 +23,6 @@
 #include <Expert/ExpertBase.mqh>
 #include <Trade/HistoryOrderInfo.mqh>
 
-
 //+------------------------------------------------------------------+
 //| GLOBAL VARIABLES                                                 |
 //+------------------------------------------------------------------+
@@ -47,6 +46,7 @@ CPositionInfo PositionInfo;
 #include "HelpFunctions/TraderInfo.mqh"
 #include "HelpFunctions/AccountInfo.mqh"
 #include "HelpFunctions/SymbolInfo.mqh"
+#include "mcarlo/mcarlo.mqh"
 
 static bool g_is_new_candle, g_daily_risk_triggered;
 static int g_day_trade_count = 0;
@@ -56,12 +56,21 @@ static int g_day_trade_count = 0;
 //+------------------------------------------------------------------+
 int OnInit()
    {
+//--- prepare trade class to control positions if hedging mode is active
+//ExtHedging = ((ENUM_ACCOUNT_MARGIN_MODE)AccountInfoInteger(ACCOUNT_MARGIN_MODE) == ACCOUNT_MARGIN_MODE_RETAIL_HEDGING);
+    Trade.SetExpertMagicNumber(SETTING_MagicNumber);
+    Trade.SetMarginMode();
+    Trade.SetTypeFillingBySymbol(Symbol());
+
+    bool use_heikin_ashi = GRAPH_Type == GRAPH_TYPE_HEIKINASHI;
+//zHAInit(TimeFrame);
+    zBBInit  (TimeFrame, use_heikin_ashi);
+    zHiLoInit(TimeFrame, use_heikin_ashi);
+    zMACDInit(TimeFrame, use_heikin_ashi);
+    zMAInit  (TimeFrame, use_heikin_ashi);
+    zRSIInit (TimeFrame, use_heikin_ashi);
+
     zADXInit(TimeFrame);
-    zBBInit(TimeFrame);
-    zHiLoInit(TimeFrame);
-    zMACDInit(TimeFrame);
-    zMAInit(TimeFrame);
-    zRSIInit(TimeFrame);
     zSARInit(TimeFrame);
     zSTOCInit(TimeFrame);
     zATRInit(TimeFrame);
@@ -93,58 +102,15 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 double OnTester(void)
    {
-//https://www.investopedia.com/articles/trading/04/091504.asp
-    double w = ((TesterStatistics(STAT_PROFIT_TRADES) + TesterStatistics(STAT_LOSS_TRADES)) > 0) ? TesterStatistics(STAT_PROFIT_TRADES) / (TesterStatistics(STAT_PROFIT_TRADES) + TesterStatistics(STAT_LOSS_TRADES)) : 0; // winning probability
-    double r = ((TesterStatistics(STAT_GROSS_LOSS) != 0) && (TesterStatistics(STAT_LOSS_TRADES) != 0) && (TesterStatistics(STAT_PROFIT_TRADES) != 0)) ? (TesterStatistics(STAT_GROSS_PROFIT) / TesterStatistics(STAT_PROFIT_TRADES)) / (-TesterStatistics(STAT_GROSS_LOSS) / TesterStatistics(STAT_LOSS_TRADES)) : 0; // Win/loss ratio;
-    double Kelly = (r != 0) ? w - ((1 - w) / r) : 0; // Kelly Criterion
-
-    double i  = 1;
-    if(SETTING_Backtesting_Expected_AVG_Deal_by_Day > 0)
-       {
-        double expected_deal_in_time = g_day_trade_count * SETTING_Backtesting_Expected_AVG_Deal_by_Day;
-        i = (TesterStatistics(STAT_DEALS) / expected_deal_in_time);
-       }
-    return(Kelly * i);
+    return optpr();         // optimization parameter
    }
-
-//+------------------------------------------------------------------+
-//|                                                                  |
-//+------------------------------------------------------------------+
-void zCheckToAbortOptimization()
-   {
-    if(IS_DEBUG_MODE || MQLInfoInteger(MQL_OPTIMIZATION))
-       {
-        bool stop = false;
-        if(SETTING_Backtesting_Stop_On_Negative_Equity
-           && AccountInfoDouble(ACCOUNT_EQUITY) < 0)
-            stop = true;
-
-        if(SETTING_Backtesting_Stop_On_Max_Drowndow_Percent > 0)
-           {
-            static double Max_Equity = 0;
-            Max_Equity  = MathMax(Max_Equity, AccountInfoDouble(ACCOUNT_EQUITY));
-            if(Max_Equity > 0)
-               {
-                double drawndown = (Max_Equity - AccountInfoDouble(ACCOUNT_EQUITY)) * 100 / Max_Equity;
-                if(drawndown > SETTING_Backtesting_Stop_On_Max_Drowndow_Percent)
-                    stop = true;
-               }
-           }
-
-        if(stop)
-           {
-            ExpertRemove();
-           }
-       }
-   }
-
 
 //+------------------------------------------------------------------+
 //| Expert tick function                                             |
 //+------------------------------------------------------------------+
 void OnTick()
    {
-    zCheckToAbortOptimization();
+//zCheckToAbortOptimization();
     PositionInfo.Select(_Symbol);
 
     g_is_new_candle = zIsNewCandle(TimeFrame);
@@ -168,13 +134,17 @@ void OnTick()
     bool can_reverse = zCanReversePosition();
     bool can_open_position_time_window = zCanOpenPositionTimeWindow();
 
-    if(can_open_position_time_window || can_reverse)
-       {
-        if(!close)
-            zIndicatorsSignal(buy, sell, close);
+    if(!close)
+        zIndicatorsSignal(buy, sell, close);
 
-        if(close)
-            close = !zReversePosition();
+    if(can_open_position_time_window && can_reverse)
+       {
+        if((buy || sell) && OUT_Use_Reverse)
+           {
+            bool reverse_order_creates = zReversePosition(buy, sell);
+            if(reverse_order_creates)
+                return;
+           }
        }
 
     if(close)
@@ -183,6 +153,7 @@ void OnTick()
         zCloseAllOpenPositions();
         return;
        }
+
 //-- If not close, then Partial
     bool partial_close = zTradeClosePartialPositions();
     if(partial_close)
@@ -193,7 +164,8 @@ void OnTick()
        }
 
 //-- Create new Order
-    if(can_open_position_time_window
+    if(PositionsTotal() == 0 && OrdersTotal() == 0
+       && can_open_position_time_window
        && (buy || sell))
         zCreateOrder(buy, sell);
    }
@@ -303,8 +275,7 @@ bool zCreateOrder(bool buy, bool sell)
         return false;
 
     double volume = ORDER_Volume;
-    if(OUT_Martingale)
-        volume = zNextMartigaleVolume();
+    volume *= zMartigaleMultiplier();
 
     if(ORDER_Management_Type == ORDER_MANAGEMENT_TYPE_FINANCIAL_VOLUME)
         volume = volume / SymbolInfoDouble(_Symbol, SYMBOL_LAST) / SymbolInfoDouble(_Symbol, SYMBOL_VOLUME_STEP);
@@ -323,42 +294,52 @@ bool zCreateOrder(bool buy, bool sell)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-double zNextMartigaleVolume()
+int zMartigaleMultiplier()
    {
-    static int zNextMartigaleVolume_times = 0;
-    if(OUT_Martingale
-       && zNextMartigaleVolume_times <= OUT_Martingale_Times)
+    static int zMartigaleMultipler = 1;
+    if(OUT_Martingale_Times > 0)
        {
-        int history_deals_total = zTodayDealsTotal();
-        ulong ticket = HistoryDealGetTicket(history_deals_total - 1);
-        double volume_initial = HistoryDealGetDouble(ticket, DEAL_VOLUME);
-        double last_profit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
-        if(ticket > 0 && last_profit < 0)
+        if(zMartigaleMultipler <= OUT_Martingale_Times)
            {
-            return volume_initial * 2;
-            zNextMartigaleVolume_times++;
+            int history_deals_total = zTodayDealsTotal();
+            ulong ticket = HistoryDealGetTicket(history_deals_total - 1);
+            double last_profit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
+            if(ticket > 0 && last_profit < 0)
+               {
+                zMartigaleMultipler++;
+                return zMartigaleMultipler;
+               }
            }
+
+        zMartigaleMultipler = 1;
        }
 
-    return ORDER_Volume;
+//-- No Martigale return always 1
+    return zMartigaleMultipler;
    }
 
 //+------------------------------------------------------------------+
 //|  Add another Order in reverse to the current position            |
 //+------------------------------------------------------------------+
-bool zReversePosition()
+bool zReversePosition(bool buy, bool sell)
    {
     if(!OUT_Use_Reverse
        || PositionsTotal() <= 0)
         return false;
 
-    double volume = zNomalizeSymbolVolume(PositionInfo.Volume() + ORDER_Volume);
+    double volume = ORDER_Volume;
+    volume *= zMartigaleMultiplier();
+    volume += PositionInfo.Volume();
+    volume  = zNomalizeSymbolVolume(volume);
 
     Trade.SetDeviationInPoints(ULONG_MAX);
-    if(PositionInfo.PositionType() == POSITION_TYPE_SELL)
+    if(PositionInfo.PositionType() == POSITION_TYPE_SELL && buy)
         return Trade.Buy(volume);
-//--else if(sell)
-    return Trade.Sell(volume);
+
+    if(PositionInfo.PositionType() == POSITION_TYPE_BUY && sell)
+        return Trade.Sell(volume);
+
+    return false;
    }
 
 //+------------------------------------------------------------------+
@@ -392,14 +373,14 @@ ENUM_INDICATOR_SIGNAL zIndicadorSignalNormalizer_OUT(ENUM_INDICATOR_SIGNAL indic
 //|  Analize all Technical Indicators and generate Buy, Sell or Close|
 //|  Signals based on the current position                           |
 //+------------------------------------------------------------------+
-bool zIndicatorsSignal(bool & buy, bool & sell, bool & close)
+void zIndicatorsSignal(bool & buy, bool & sell, bool & close)
    {
     buy = false;
     sell = false;
     close = false;
 
     if(!g_is_new_candle)
-        return false;
+        return;
 
     ENUM_INDICATOR_SIGNAL indicator_signals[];
     ArrayResize(indicator_signals, 10);
@@ -417,9 +398,10 @@ bool zIndicatorsSignal(bool & buy, bool & sell, bool & close)
     ENUM_INDICATOR_SIGNAL vwap = zVWAP();
 
 //-- Open Position
-    if(PositionsTotal() == 0 && OrdersTotal() == 0)
+    if((PositionsTotal() == 0 && OrdersTotal() == 0)
+       || OUT_Use_Reverse)
        {
-        indicator_signals[0] = zIndicadorSignalNormalizer_IN(bb, MA_Operation_Mode);
+        indicator_signals[0] = zIndicadorSignalNormalizer_IN(bb, BB_Operation_Mode);
         indicator_signals[1] = zIndicadorSignalNormalizer_IN(adx, ADX_Operation_Mode);
         indicator_signals[2] = zIndicadorSignalNormalizer_IN(hilo, HILO_Operation_Mode);
         indicator_signals[3] = zIndicadorSignalNormalizer_IN(macd, MACD_Operation_Mode);
@@ -446,16 +428,16 @@ bool zIndicatorsSignal(bool & buy, bool & sell, bool & close)
                {
                 buy = false;
                 sell = false;
-                return true;
+                break;
                }
            }
        }
 //-- Close Position
-    else // if(PositionsTotal() > 0 || OrdersTotal() > 0)
+    if(PositionsTotal() > 0 || OrdersTotal() > 0)
        {
         ENUM_POSITION_TYPE position_type = (ENUM_POSITION_TYPE)PositionGetInteger(POSITION_TYPE);
 
-        indicator_signals[0] = zIndicadorSignalNormalizer_OUT(bb, MA_Operation_Mode);
+        indicator_signals[0] = zIndicadorSignalNormalizer_OUT(bb, BB_Operation_Mode);
         indicator_signals[1] = zIndicadorSignalNormalizer_OUT(adx, ADX_Operation_Mode);
         indicator_signals[2] = zIndicadorSignalNormalizer_OUT(hilo, HILO_Operation_Mode);
         indicator_signals[3] = zIndicadorSignalNormalizer_OUT(macd, MACD_Operation_Mode);
@@ -472,9 +454,8 @@ bool zIndicatorsSignal(bool & buy, bool & sell, bool & close)
               )
                {
                 close = true;
-                return true;
+                break;
                }
-
        }
 
     if(ORDER_Block_New_Inputs_On_Same_Day)
@@ -487,6 +468,6 @@ bool zIndicatorsSignal(bool & buy, bool & sell, bool & close)
             sell = false;
        }
 
-    return true;
+    return ;
    }
 //+------------------------------------------------------------------+

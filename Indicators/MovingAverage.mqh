@@ -27,6 +27,8 @@ input int MA_Long_Periods = 40;                                                 
 input int MA_Long_Shift = 0;                                                            // Long Shift
 input ENUM_APPLIED_PRICE MA_Long_Applied_Price = PRICE_CLOSE;                           // Long Applied Price
 
+int MA_HA_Short_Handler;
+int MA_HA_Long_Handler;
 int MA_Short_Handler;
 int MA_Long_Handler;
 double MA_Short_Buffer[];
@@ -35,16 +37,27 @@ double MA_Long_Buffer[];
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int zMAInit(ENUM_TIMEFRAMES timeframe)
+int zMAInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
    {
     if(MA_Enable)
        {
         ArraySetAsSeries(MA_Short_Buffer, true);
         ArraySetAsSeries(MA_Long_Buffer, true);
 
-        //--- create handle of the indicator
-        MA_Short_Handler = iMA(_Symbol, timeframe, MA_Short_Periods, MA_Short_Shift, MA_Short_Method,  MA_Short_Applied_Price);
-        MA_Long_Handler  = iMA(_Symbol, timeframe, MA_Long_Periods,  MA_Long_Shift,  MA_Long_Method,   MA_Long_Applied_Price);
+        if(!use_heikin_ashi)
+           {
+            //--- create handle of the indicator
+            MA_Short_Handler = iMA(_Symbol, timeframe, MA_Short_Periods, MA_Short_Shift, MA_Short_Method,  MA_Short_Applied_Price);
+            MA_Long_Handler  = iMA(_Symbol, timeframe, MA_Long_Periods,  MA_Long_Shift,  MA_Long_Method,   MA_Long_Applied_Price);
+           }
+        else
+           {
+            MA_HA_Short_Handler = iCustom(_Symbol, timeframe, "CustomHeikenAshi", MA_Short_Applied_Price);
+            MA_Short_Handler    = iMA(_Symbol, timeframe, MA_Short_Periods, MA_Short_Shift, MA_Short_Method, MA_HA_Short_Handler);
+
+            MA_HA_Long_Handler = iCustom(_Symbol, timeframe, "CustomHeikenAshi", MA_Long_Applied_Price);
+            MA_Long_Handler    = iMA(_Symbol, timeframe, MA_Long_Periods,  MA_Long_Shift,  MA_Long_Method, MA_HA_Long_Handler);
+           }
 
         //--- if the handle is not created
         if(MA_Short_Handler == INVALID_HANDLE
@@ -69,6 +82,12 @@ void zMADeinit()
         IndicatorRelease(MA_Short_Handler);
 
     if(MA_Long_Handler != INVALID_HANDLE)
+        IndicatorRelease(MA_Long_Handler);
+    
+    if(MA_HA_Short_Handler != INVALID_HANDLE)
+        IndicatorRelease(MA_Long_Handler);
+    
+    if(MA_HA_Long_Handler != INVALID_HANDLE)
         IndicatorRelease(MA_Long_Handler);
 
     ArrayFree(MA_Short_Buffer);

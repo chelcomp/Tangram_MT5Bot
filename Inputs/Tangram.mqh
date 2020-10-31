@@ -6,11 +6,6 @@
 #include "../Enums/OperationDirection.mqh"
 #include "../Enums/TimeInterval.mqh"
 
-enum ENUM_GRAPH_TYPE
-   {
-    GRAPH_TYPE_CANDLE_STICK, // CandleStick
-  //  GRAPH_TYPE_HEIKINASHI   // Heikin-Ashi
-   };
 
 enum enum_SmoothingType
    {
@@ -23,26 +18,32 @@ enum ENUM_ORDER_MANAGEMENT_TYPE
     ORDER_MANAGEMENT_TYPE_FIXED_VOLUME,    // Fixed Volume
     ORDER_MANAGEMENT_TYPE_FINANCIAL_VOLUME // Financial Volume R$
    };
-
+   
+enum ENUM_GRAPH_TYPE
+   {
+    GRAPH_TYPE_CANDLE_STICK, // CandleStick
+    GRAPH_TYPE_HEIKINASHI   // Heikin-Ashi (NOT Smoothed)
+   };
+   
 sinput string Comment1 = "NOT PRODUCTION READY"; // Tangram Bot - Only for study ( Demo Account ) on B3 and MBF
 sinput string Comment2 = "This bot was created based on options available on Tangram bot, but there is no guarantee of equivalency."; // Disclaimer: No relation with Smarttbot.com.br
 sinput string Comment3 = "michelpurper@gmail.com"; // Developper Contact
-input string BotName = ""; // Bot Name
+input  string BotName  = ""; // Bot Name
 
 //+------------------------------------------------------------------+
 //|  Graphic input section                                           |
 //+------------------------------------------------------------------+
 input group "Graphic";
-input ENUM_TIMEFRAMES TimeFrame = PERIOD_M5;                // Timeframe
+input ENUM_TIMEFRAMES TimeFrame = PERIOD_M5;                  // Timeframe
 //+------------------------------------------------------------------+
+input ENUM_GRAPH_TYPE GRAPH_Type = GRAPH_TYPE_CANDLE_STICK;   // Type
+
 /*
-input ENUM_GRAPH_TYPE GraphType = GRAPH_TYPE_CANDLE_STICK;  // Type
 input group "Graphic Heikin-Ashi"
 input bool input_UseSmoothing = false;                        // Use Smoothing
 input enum_SmoothingType input_SmoothingType = stExponential; // Smoothing Type
 input int input_SmoothingPeriods = 3;                         // Smoothing Periods
 */
-//+------------------------------------------------------------------
 
 input group "Order Management"
 input ENUM_ORDER_MANAGEMENT_TYPE ORDER_Management_Type = ORDER_MANAGEMENT_TYPE_FIXED_VOLUME;   // Volume Type
@@ -67,16 +68,20 @@ sinput group "TECHNICAL INDICATORS ---------------------------------------------
 sinput group "TRADE RISK MANAGEMENT ---------------------------------------------------"
 input group "Output Criterias"
 input bool OUT_Use_Reverse = true;   // Allow Reverse Order
-input bool OUT_Martingale = false;  // Use Martingale
-input int  OUT_Martingale_Times = 1; // Maximum number of consecutive losses with position increase
+input int  OUT_Martingale_Times = 0; // Martingale: Maximum number of consecutive losses with position increase
 #include "../RiskManagement/Trade.mqh";
 
 //+------------------------------------------------------------------+
 sinput group "DAILY RISK MANAGEMENT ---------------------------------------------------"
 #include "../RiskManagement/Daily.mqh";
 
+input group "Custom Optimization: Monte Carlo"
+#include "../mcarlo/mcarlo.mqh"
+
 input group "Backtesting Setting (Custom Criteria)"
-//input long input_MagicNumber = -1; // Magic Number
+sinput long SETTING_MagicNumber = -1; // Magic Number
+/*
 sinput bool   SETTING_Backtesting_Stop_On_Negative_Equity = true;      // Stop to backtesting when Equity is over (When Account is Zero)
 sinput double SETTING_Backtesting_Stop_On_Max_Drowndow_Percent = 30; // Stop to backtestig when Drowndown higher than %
 sinput double SETTING_Backtesting_Expected_AVG_Deal_by_Day = 1.5;    // Average deal by day to ranking up
+*/

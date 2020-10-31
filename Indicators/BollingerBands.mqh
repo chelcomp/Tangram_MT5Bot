@@ -7,8 +7,8 @@
 
 enum ENUM_BB_USE_MODE
    {
-    BB_USE_MODE_ABOVE_BELOW,        // Price Above or Below of the Bands
-    BB_USE_MODE_CROSSING            // Price Crossing With the Bands
+    BB_USE_MODE_ABOVE_BELOW,        // Close Price Above or Below of the Bands
+    BB_USE_MODE_CROSSING            // Close Price Crossing With the Bands
    };
 
 input group "8. Bolliger's Band"
@@ -20,6 +20,7 @@ input ENUM_APPLIED_PRICE BB_Applied_Price = PRICE_CLOSE;                        
 input int BB_Period = 14;                                                              // Period
 input double BB_Deviation_Multiplier = 1.5;                                            // Deviation Multiplier
 int BB_Handler;
+int BB_HA_Short_Handler;
 double BB_Upper_Buffer[];
 double BB_Middle_Buffer[];
 double BB_Lower_Buffer[];
@@ -28,7 +29,7 @@ ENUM_TIMEFRAMES BB_Timeframe;
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int zBBInit(ENUM_TIMEFRAMES timeframe)
+int zBBInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
    {
     if(BB_Enable)
        {
@@ -38,7 +39,13 @@ int zBBInit(ENUM_TIMEFRAMES timeframe)
         BB_Timeframe = timeframe;
 
         //--- create handle of the indicator
-        BB_Handler = iBands(_Symbol, timeframe, BB_Period, 0, BB_Deviation_Multiplier, BB_Applied_Price);
+        if(!use_heikin_ashi)
+            BB_Handler = iBands(_Symbol, timeframe, BB_Period, 0, BB_Deviation_Multiplier, BB_Applied_Price);
+        else
+           {
+            BB_HA_Short_Handler = iCustom(_Symbol, timeframe, "CustomHeikenAshi", BB_Applied_Price);
+            BB_Handler = iBands(_Symbol, timeframe, BB_Period, 0, BB_Deviation_Multiplier, BB_Applied_Price);
+           }
 
         //--- if the handle is not created
         if(BB_Handler == INVALID_HANDLE)
@@ -61,6 +68,9 @@ void zBBDeinit()
    {
     if(BB_Handler != INVALID_HANDLE)
         IndicatorRelease(BB_Handler);
+
+    if(BB_HA_Short_Handler != INVALID_HANDLE)
+        IndicatorRelease(BB_HA_Short_Handler);
 
     ArrayFree(BB_Upper_Buffer);
     ArrayFree(BB_Middle_Buffer);

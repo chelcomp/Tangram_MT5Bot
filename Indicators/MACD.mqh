@@ -31,13 +31,14 @@ input bool MACD_Filter = false;                                                 
 input int MACD_Filter_Value = 0;                                                          // Filter: Vaue
 
 int MACD_Handler;
+int MACD_HA_Handler;
 double MACD_Buffer[];
 double MACD_Signal_Buffer[];
 
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int zMACDInit(ENUM_TIMEFRAMES timeframe)
+int zMACDInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
    {
     if(MACD_Enable)
        {
@@ -45,8 +46,15 @@ int zMACDInit(ENUM_TIMEFRAMES timeframe)
         ArraySetAsSeries(MACD_Signal_Buffer, true);
 
         //--- create handle of the indicator
-        MACD_Handler = iMACD(_Symbol, timeframe, MACD_Fast_Periods, MACD_Slow_Period, MACD_Signal_Line, MACD_Applied_Price);
-
+        if(!use_heikin_ashi)
+           {
+            MACD_Handler = iMACD(_Symbol, timeframe, MACD_Fast_Periods, MACD_Slow_Period, MACD_Signal_Line, MACD_Applied_Price);
+           }
+        else
+           {
+            MACD_HA_Handler = iCustom(_Symbol, timeframe, "CustomHeikenAshi", MACD_Applied_Price);
+            MACD_Handler = iMACD(_Symbol, timeframe, MACD_Fast_Periods, MACD_Slow_Period, MACD_Signal_Line, MACD_HA_Handler);
+           }
         //--- if the handle is not created
         if(MACD_Handler == INVALID_HANDLE)
            {
@@ -67,6 +75,9 @@ void zMACDDeinit()
    {
     if(MACD_Handler != INVALID_HANDLE)
         IndicatorRelease(MACD_Handler);
+
+    if(MACD_HA_Handler != INVALID_HANDLE)
+        IndicatorRelease(MACD_HA_Handler);
 
     ArrayFree(MACD_Buffer);
     ArrayFree(MACD_Signal_Buffer);
