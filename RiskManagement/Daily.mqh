@@ -8,7 +8,7 @@ enum ENUM_STOP_AFTER_X_DEALS
    {
     STOP_AFTER_X_DEALS_NONE,    // None
     STOP_AFTER_X_DEALS_WINNING, // Positive
-    STOP_AFTER_X_DEALS_BOTH,    // Positive and Negative
+    STOP_AFTER_X_DEALS_BOTH,    // Positive or Negative
     STOP_AFTER_X_DEALS_LOSSING  // Negative
    };
 
@@ -20,8 +20,8 @@ input double RISK_Daily_Stop_Loss_Money = NULL;                                 
 input double RISK_Daily_Stop_Gain_Money = NULL;                                       // Stop Gain $
 input ENUM_STOP_AFTER_X_DEALS RISK_Stop_After_X_Deals_Mode = STOP_AFTER_X_DEALS_NONE; // Stop After X Trades If Daily Balance
 input int    RISK_Stop_After_X_Deals = NULL;                                          // Stop After X Deals
-input double RISK_Daily_Breakeven_Activation = 30.0;                                  // Daily Breakeven Activation $
-input double RISK_Daily_Breakeven_Max_Decline = 10.0;                                 // Daily Breakeven Max Decline $
+input double RISK_Daily_Breakeven_Activation = NULL;                                  // Daily Breakeven Activation $
+input double RISK_Daily_Breakeven_Max_Decline = NULL;                                 // Daily Breakeven Max Decline $
 
 //+------------------------------------------------------------------+
 //|  Time windows                                                    |
@@ -42,17 +42,96 @@ input bool TIME_Lock2_Allow_Reverse = true;                      // Lock Time 2:
 input ENUM_TIME_INTERVAL TIME_Daily_Stop   = TIME_INTERVAL_1640; // End time for opening positions
 input ENUM_TIME_INTERVAL TIME_Daily_Finish = TIME_INTERVAL_1745; // Final Time Close All Positions
 
-
-
 static double RISK_Daily_Breakeven_Whatermark = 0;
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+int zDailyInit()
+   {
+    datetime empty_date   = zEnumToDateTime(TIME_INTERVAL_0000);
+    datetime daily_start  = zEnumToDateTime(TIME_Daily_Start);
+    datetime lock1_begin  = zEnumToDateTime(TIME_Lock1_Begin);
+    datetime lock1_end    = zEnumToDateTime(TIME_Lock1_End);
+    datetime lock2_begin  = zEnumToDateTime(TIME_Lock2_Begin);
+    datetime lock2_end    = zEnumToDateTime(TIME_Lock2_End);
+    datetime daily_stop   = zEnumToDateTime(TIME_Daily_Stop);
+    datetime daily_finish = zEnumToDateTime(TIME_Daily_Finish);
+
+    if(daily_finish != empty_date
+       && (daily_finish <  daily_stop
+           || daily_finish <  lock2_end
+           || daily_finish <  lock2_begin
+           || daily_finish <  lock1_end
+           || daily_finish <  lock1_begin
+           || daily_finish <  daily_start
+          ))
+       {
+        Print("Final Time Close can't be lower than any other time before on the day.");
+        return (INIT_PARAMETERS_INCORRECT);
+       }
+
+    if(daily_stop != empty_date
+       && (daily_stop <  lock2_end
+           || daily_stop <  lock2_begin
+           || daily_stop <  lock1_end
+           || daily_stop <  lock1_begin
+           || daily_stop <  daily_start
+          ))
+       {
+        Print("End time Close can't be lower than any other time before on the day.");
+        return (INIT_PARAMETERS_INCORRECT);
+       }
+
+    if(lock2_end != empty_date
+       && (lock2_end <  lock2_begin
+           || lock2_end <  lock1_end
+           || lock2_end <  lock1_begin
+           || lock2_end <  daily_start
+          ))
+       {
+        Print("Lock Time 2 End can't be lower than any other time before on the day.");
+        return (INIT_PARAMETERS_INCORRECT);
+       }
+
+    if(lock2_begin != empty_date
+       && (lock2_begin <  lock1_end
+           || lock2_begin <  lock1_begin
+           || lock2_begin <  daily_start
+          ))
+       {
+        Print("Lock Time 2 Begin can't be lower than any other time before on the day.");
+        return (INIT_PARAMETERS_INCORRECT);
+       }
+
+    if(lock1_end != empty_date
+       && (lock1_end <  lock1_begin
+           || lock1_end <  daily_start
+          ))
+       {
+        Print("Lock Time 1 End can't be lower than any other time before on the day.");
+        return (INIT_PARAMETERS_INCORRECT);
+       }
+
+    if(lock1_begin != empty_date
+       && (lock1_begin < daily_start
+          ))
+       {
+        Print("Lock Time 1 Begin can't be lower than any other time before on the day.");
+        return (INIT_PARAMETERS_INCORRECT);
+       }
+
+
+    return(INIT_SUCCEEDED);
+   }
 
 //+------------------------------------------------------------------+
 //|  Check all daily Risk parameters                                 |
 //|  If returns TRUE, should close all positions ans stop to operate |
 //+------------------------------------------------------------------+
-bool zDailyRiskEvent()
+bool zDailyRiskEvent(ulong magic_number)
    {
-    double daily_net_profit = zCurrentDayNetProfit();
+    double daily_net_profit = zCurrentDayNetProfit(magic_number);
     double variable_net_profit = daily_net_profit + PositionInfo.Profit() - PositionInfo.Commission();
 
 //-- Stop Loss
@@ -66,7 +145,7 @@ bool zDailyRiskEvent()
         return true;
 
 // Stop after X Deals
-    int today_deals_totals = zTodayClosedDealsTotal();
+    int today_deals_totals = zTodayClosedDealsTotal(g_magic_number);
     if(RISK_Stop_After_X_Deals > 0
        && RISK_Stop_After_X_Deals_Mode != STOP_AFTER_X_DEALS_NONE
        && today_deals_totals >= RISK_Stop_After_X_Deals)
@@ -131,6 +210,7 @@ bool zCanOpenPositionTimeWindow()
 
 //-- Lock Time 1
     if(TIME_Lock1_Begin != TIME_INTERVAL_0000 && TIME_Lock1_End != TIME_INTERVAL_0000
+       && TIME_Lock1_End > TIME_Lock1_Begin
        && time_current >= zEnumToDateTime(TIME_Lock1_Begin)
        && time_current <= zEnumToDateTime(TIME_Lock1_End)
       )
@@ -138,6 +218,7 @@ bool zCanOpenPositionTimeWindow()
 
 //-- Lock Time 1
     if(TIME_Lock2_Begin != TIME_INTERVAL_0000 && TIME_Lock2_End != TIME_INTERVAL_0000
+       && TIME_Lock2_End > TIME_Lock2_Begin
        && time_current >= zEnumToDateTime(TIME_Lock2_Begin)
        && time_current <= zEnumToDateTime(TIME_Lock2_End)
       )
@@ -185,4 +266,6 @@ bool zCanReversePosition()
 
     return can_reverse;
    }
+//+------------------------------------------------------------------+
+
 //+------------------------------------------------------------------+

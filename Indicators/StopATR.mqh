@@ -3,8 +3,8 @@
 //|                        Copyright 2020, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
-
 #include "../HelpFunctions/Array.mqh"
+#include "../HelpFunctions/Input.mqh"
 
 enum ENUM_ATR_USE_MODE
    {
@@ -19,7 +19,7 @@ enum ENUM_ATR_AVERAGE_TYPE
    };
 
 input group "9. Stop ATR"
-input bool ATR_Enable = false;                                                          // Enable ATR
+sinput bool ATR_Enable = false;                                                          // Enable ATR
 input bool ATR_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE ATR_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_ATR_USE_MODE ATR_Use_Mode = ATR_USE_MODE_DIRECTION_CHANGE;                   // Use Mode
@@ -41,7 +41,7 @@ int zATRInit(ENUM_TIMEFRAMES timeframe)
        {
         ArraySetAsSeries(ATR_Buffer, true);
         ArraySetAsSeries(ATR_Stop_Buffer, true);
-        ArrayResize(ATR_Stop_Buffer, ATR_Period);
+        ArrayResize(ATR_Stop_Buffer, 3); //ATR_Period + 2);
         ArrayInitialize(ATR_Stop_Buffer, 0);
 
         ATR_Timeframe = timeframe;;
@@ -62,6 +62,25 @@ int zATRInit(ENUM_TIMEFRAMES timeframe)
 //--- normal initialization of the indicator
     return(INIT_SUCCEEDED);
    }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zATROnTesterInit()
+   {
+    if(!ATR_Enable)
+       {       
+        zDisableInput("ATR_Reverse");
+        zDisableInput("ATR_Operation_Mode");
+        zDisableInput("ATR_Use_Mode");
+
+        zDisableInput("ATR_AVERAGE_TYPE");
+        zDisableInput("ATR_Period");
+        zDisableInput("ATR_Multiplicator");
+       }
+   }
+
+
 
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -102,6 +121,7 @@ ENUM_INDICATOR_SIGNAL zATR()
                           ? rates[2].close - atr_loss
                           : rates[2].close + atr_loss;
     */
+    
     double atr_stop = (rates[1].close > ATR_Stop_Buffer[2] && rates[2].close > ATR_Stop_Buffer[2]
                        ? MathMax(ATR_Stop_Buffer[2], rates[1].close - atr_loss)
                        : (rates[1].close < ATR_Stop_Buffer[2] && rates[2].close < ATR_Stop_Buffer[2]
@@ -109,7 +129,6 @@ ENUM_INDICATOR_SIGNAL zATR()
                           : (rates[1].close > ATR_Stop_Buffer[2]
                              ? rates[1].close - atr_loss
                              : rates[1].close + atr_loss)));
-
 
     ATR_Stop_Buffer[1] = atr_stop;
 
@@ -134,7 +153,7 @@ ENUM_INDICATOR_SIGNAL zATR()
         indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
                            : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
                            : indicator_signal;
-                           
+
     return indicator_signal;
    }
 //+------------------------------------------------------------------+

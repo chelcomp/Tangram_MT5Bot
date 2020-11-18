@@ -3,6 +3,8 @@
 //|                        Copyright 2020, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
+#include "../HelpFunctions/Input.mqh"
+
 enum ENUM_MACD_USE_MODE
    {
     MACD_USE_MODE_ABOVE_BELOW, // MACD Line Above/Below Signal Line
@@ -16,8 +18,8 @@ enum ENUM_MACD_AVERAGE_TYPE
    };
 
 input group "3. MACD"
-input bool MACD_Enable = false;                                                          // Enable MACD
-input bool MACD_Reverse = false;                                                          // Reverse
+sinput bool MACD_Enable = false;                                                         // Enable MACD
+input bool MACD_Reverse = false;                                                         // Reverse
 input ENUM_INDICATOR_OPERATION_MODE MACD_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_MACD_USE_MODE MACD_Use_Mode = MACD_USE_MODE_ABOVE_BELOW;                      // Use Mode
 input ENUM_APPLIED_PRICE MACD_Applied_Price = PRICE_CLOSE;                               // Applied Price
@@ -27,8 +29,8 @@ input int MACD_Slow_Period = 12;                                                
 input int MACD_Fast_Periods = 26;                                                         // Fast Periods
 input int MACD_Signal_Line  = 9;                                                          // Signal Line
 
-input bool MACD_Filter = false;                                                           // Filter: Buy/Sell Only With MACD Below/Above the Filter Value
-input int MACD_Filter_Value = 0;                                                          // Filter: Vaue
+input bool MACD_Filter = false;                                                           // Filter(in): Buy/Sell Only With MACD Below/Above the Filter Value
+input int MACD_Filter_Value = 0;                                                          // Filter(in): Vaue
 
 int MACD_Handler;
 int MACD_HA_Handler;
@@ -42,6 +44,12 @@ int zMACDInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
    {
     if(MACD_Enable)
        {
+        if(MACD_Slow_Period >= MACD_Fast_Periods)
+           {
+            Print("MACD Slow can't be higher than MACD Fast parameter");
+            return INIT_PARAMETERS_INCORRECT;
+           }
+
         ArraySetAsSeries(MACD_Buffer, true);
         ArraySetAsSeries(MACD_Signal_Buffer, true);
 
@@ -65,8 +73,36 @@ int zMACDInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
             return(INIT_FAILED);
            }
        }
+
 //--- normal initialization of the indicator
     return(INIT_SUCCEEDED);
+   }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zMACDOnTesterInit()
+   {
+    if(!MACD_Enable)
+       {
+        zDisableInput("MACD_Reverse");
+        zDisableInput("MACD_Operation_Mode");
+        zDisableInput("MACD_Use_Mode");
+        zDisableInput("MACD_Applied_Price");
+        zDisableInput("MACD_AVERAGE_TYPE");
+        zDisableInput("MACD_Slow_Period");
+        zDisableInput("MACD_Fast_Periods");
+        zDisableInput("MACD_Signal_Line");
+
+        zDisableInput("MACD_Filter");
+        zDisableInput("MACD_Filter_Value");
+       }
+    else
+        if(MACD_Operation_Mode == INDICATOR_OPERATION_MODE_OUT)
+           {
+            zDisableInput("MACD_Filter");
+            zDisableInput("MACD_Filter_Value");
+           }
    }
 //+------------------------------------------------------------------+
 //|                                                                  |
@@ -113,6 +149,25 @@ ENUM_INDICATOR_SIGNAL zMACD()
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
 
+
+
+    if(MACD_Reverse)
+        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
+                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
+                           : indicator_signal;
+
+    return indicator_signal;
+   }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+ENUM_INDICATOR_SIGNAL zMACDFilter()
+   {
+    if(!MACD_Enable)
+        return INDICATOR_SIGNAL_NEUTRAL_ALLOW;
+    ENUM_INDICATOR_SIGNAL indicator_signal = INDICATOR_FILTER_ALLOW;
+
     if(MACD_Filter)
         if(indicator_signal == INDICATOR_SIGNAL_SELL
            && MACD_Buffer[1] < MACD_Filter_Value)
@@ -126,14 +181,8 @@ ENUM_INDICATOR_SIGNAL zMACD()
                 indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
                }
 
-    if(MACD_Reverse)
-        indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
-                           : indicator_signal == INDICATOR_SIGNAL_BUY ? INDICATOR_SIGNAL_SELL
-                           : indicator_signal;
-
     return indicator_signal;
    }
-
 //+------------------------------------------------------------------+
 //| Filling indicator buffers from the iMACD indicator               |
 //+------------------------------------------------------------------+

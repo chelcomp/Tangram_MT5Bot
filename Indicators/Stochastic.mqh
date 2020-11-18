@@ -3,6 +3,7 @@
 //|                        Copyright 2020, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
+#include "../HelpFunctions/Input.mqh"
 
 enum ENUM_STOC_USE_MODE
    {
@@ -11,7 +12,7 @@ enum ENUM_STOC_USE_MODE
    };
 
 input group "5. Stochastic"
-input bool STOC_Enable = false;                                                          // Enable STOC
+sinput bool STOC_Enable = false;                                                          // Enable STOC
 input bool STOC_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE STOC_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_STOC_USE_MODE STOC_Use_Mode = STOC_USE_MODE_ABOVE_BELOW;                      // Use Mode
@@ -25,7 +26,6 @@ int STOC_Handler;
 double STOC_K_Buffer[];
 double STOC_D_Buffer[];
 
-
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -33,6 +33,20 @@ int zSTOCInit(ENUM_TIMEFRAMES timeframe)
    {
     if(STOC_Enable)
        {
+
+        if(STOC_Level_Oversold >= STOC_Level_Overbought)
+           {
+            Print("Staochastic Oversold can't be higher than Overbougth");
+            return INIT_PARAMETERS_INCORRECT;
+           }
+
+        if(STOC_Level_Oversold > 100
+           || STOC_Level_Overbought            > 100)
+           {
+            Print("Staochastic Oversold or Overbougth can't be higher than 100");
+            return INIT_PARAMETERS_INCORRECT;
+           }
+
         ArraySetAsSeries(STOC_K_Buffer, true);
         ArraySetAsSeries(STOC_D_Buffer, true);
 
@@ -52,6 +66,29 @@ int zSTOCInit(ENUM_TIMEFRAMES timeframe)
 //--- normal initialization of the indicator
     return(INIT_SUCCEEDED);
    }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zSTOCOnTesterInit()
+   {
+    zSetInputRangeStop("STOC_Level_Oversold", 100);
+    zSetInputRangeStop("STOC_Level_Overbought", 100);
+
+    if(!STOC_Enable)
+       {
+        zDisableInput("STOC_Reverse");
+        zDisableInput("STOC_Operation_Mode");
+        zDisableInput("STOC_Use_Mode");
+        zDisableInput("STOC_K_Period");
+        zDisableInput("STOC_Period_Smothled");
+        zDisableInput("STOC_D_Period");
+        zDisableInput("STOC_Filter");
+        zDisableInput("STOC_Level_Oversold");
+        zDisableInput("STOC_Level_Overbought");
+       }
+   }
+
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

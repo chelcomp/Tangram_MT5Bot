@@ -7,7 +7,6 @@
 #property link      "http://www.mql5.com"
 //+------------------------------------------------------------------+
 #include <Math\Stat\Uniform.mqh>
-#define NOPTPRMAX 6          // Number of variants of the optimization parameter
 #define NADD 30
 #define NSAMPLES 10000       // Number of samples in Monte Carlo method
 //#define ndealsmin 5          // Minimal number of deals
@@ -20,19 +19,18 @@ enum ENUM_MONTECARLO_OPT
     MONTECARLO_OPT_RMND_REL = 4,     // Total profit with relative drawdown restriction parameter         |
     MONTECARLO_OPT_FRW_WMW  = 5,     // WMW parameter (Forward)
     MONTECARLO_OPT_FRW_WMW_PRF = 6,  // WMW + total profit parameter (Forward)
+    MONTECARLO_OPT_ALL = 7,          // All
    };
 
-input ENUM_MONTECARLO_OPT noptpr = MONTECARLO_OPT_RMND_ABS; // Optimization parameter variant
-input double ndealsmin = 5;                                 // Minimal number of Deals
-input double rmndmin = 0.9;                                 // Drawdown restriction [0.0 - 1.0]
-input double fwdsh = 0.5;                                   // Share of deals in "future" [0.0, 1.0]
+sinput ENUM_MONTECARLO_OPT noptpr = MONTECARLO_OPT_ALL; // Optimization parameter variant
+sinput double ndealsmin = 30;                                // Minimal number of Deals
+sinput double rmndmin = 0.3;                                 // Drawdown restriction [0.0 - 1.0]
+sinput double fwdsh = 0.5;                                   // Share of deals in "future" [0.0, 1.0]
 //+------------------------------------------------------------------+
 //|base function                                                     |
 //+------------------------------------------------------------------+
 double optpr()
    {
-    if(noptpr < 1 || noptpr > NOPTPRMAX)
-        return 0.0;
     double k[];
     if(!setks(k))
         return 0.0;
@@ -53,6 +51,15 @@ double optpr()
             return frw_wmw(k);
         case MONTECARLO_OPT_FRW_WMW_PRF:
             return frw_wmw_prf(k);
+        default:
+            return (mean_sd(k)
+                    + med_intq(k)
+                    + rmnd_abs(k)
+                    + rmnd_rel(k)
+                    + frw_wmw(k)
+                    + frw_wmw_prf(k)
+                   ) / 6.0;
+
        }
     return 0.0;
    }
@@ -72,7 +79,9 @@ double mean_sd(double &k[])
             cn[n] *= km[i];
         cn[n] -= 1.0;
        }
-    return MathMean(cn) / MathStandardDeviation(cn);
+    double deviation = MathStandardDeviation(cn);
+    deviation = deviation > 0 ? deviation : 1;
+    return MathMean(cn) / deviation;
    }
 //+------------------------------------------------------------------+
 //|total profit median + interquartile range parameter               |
@@ -91,7 +100,9 @@ double med_intq(double &k[])
         cn[n] -= 1.0;
        }
     ArraySort(cn);
-    return cn[(int)(0.5 * NSAMPLES)] / (cn[(int)(0.75 * NSAMPLES)] - cn[(int)(0.25 * NSAMPLES)]);
+    double part = (cn[(int)(0.75 * NSAMPLES)] - cn[(int)(0.25 * NSAMPLES)]);
+    part = part > 0 ? part : 1;
+    return cn[(int)(0.5 * NSAMPLES)] / part;
    }
 //+------------------------------------------------------------------+
 //|total profit with absolute drawdown restriction parameter         |
@@ -208,10 +219,12 @@ bool setks(double &k[])
     int nk = 0;
     ulong hdticket;
     double capital = TesterStatistics(STAT_INITIAL_DEPOSIT);
+
     long hdtype;
     double hdcommission, hdswap, hdprofit, hdprofit_full;
     for(uint n = 0; n < nhd; ++n)
        {
+        capital = capital > 0 ? capital : 1;
         hdticket = HistoryDealGetTicket(n);
         if(hdticket == 0)
             continue;

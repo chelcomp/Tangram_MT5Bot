@@ -3,6 +3,8 @@
 //|                        Copyright 2020, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
+#include "../HelpFunctions/Input.mqh"
+
 enum ENUM_VWAP_USE_MODE
    {
     VWAP_USE_MODE_SELL_ABOVE_BUY_BELOW, // Sell Above of VWAP / Buy Below VWAP
@@ -11,7 +13,7 @@ enum ENUM_VWAP_USE_MODE
    };
 
 input group "6. VWAP Activator"
-input bool VWAP_Enable = false;                                                           // Enable VWAP
+sinput bool VWAP_Enable = false;                                                           // Enable VWAP
 input bool VWAP_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE VWAP_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH;  // Operation Mode
 input ENUM_VWAP_USE_MODE VWAP_Use_Mode = VWAP_USE_MODE_SELL_ABOVE_BUY_BELOW;              // Use Mode
@@ -31,6 +33,15 @@ int zVWAPInit(ENUM_TIMEFRAMES timeframe)
     return(INIT_SUCCEEDED);
    }
 
+void zVWAPOnTesterInit()
+   {
+    if(!VWAP_Enable)
+       {
+        zDisableInput("VWAP_Reverse");
+        zDisableInput("VWAP_Operation_Mode");
+        zDisableInput("VWAP_Use_Mode");
+       }
+   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -69,7 +80,7 @@ ENUM_INDICATOR_SIGNAL zVWAP()
        }
 
 //--- Load buffers and
-    if(CopyRates(Symbol(), VWAP_Timeframe, zVWAP_last_processed_date, TimeCurrent(), rates) < 0)
+    if(CopyRates(Symbol(), VWAP_Timeframe, zVWAP_last_processed_date, TimeCurrent(), rates) < 2)
         return indicator_signal;
 
     zVWAP_last_processed_date = TimeCurrent();

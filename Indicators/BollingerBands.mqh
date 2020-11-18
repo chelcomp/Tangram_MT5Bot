@@ -3,7 +3,7 @@
 //|                        Copyright 2020, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
-
+#include "../HelpFunctions/Input.mqh"
 
 enum ENUM_BB_USE_MODE
    {
@@ -12,13 +12,14 @@ enum ENUM_BB_USE_MODE
    };
 
 input group "8. Bolliger's Band"
-input bool BB_Enable = false;                                                          // Enable BB
+sinput bool BB_Enable = false;                                                          // Enable BB
 input bool BB_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE BB_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_BB_USE_MODE BB_Use_Mode = BB_USE_MODE_ABOVE_BELOW;                          // Use Mode
 input ENUM_APPLIED_PRICE BB_Applied_Price = PRICE_CLOSE;                               // Applied Price
 input int BB_Period = 14;                                                              // Period
 input double BB_Deviation_Multiplier = 1.5;                                            // Deviation Multiplier
+
 int BB_Handler;
 int BB_HA_Short_Handler;
 double BB_Upper_Buffer[];
@@ -60,7 +61,21 @@ int zBBInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
 //--- normal initialization of the indicator
     return(INIT_SUCCEEDED);
    }
-
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zBBOnTesterInit()
+   {
+    if(!BB_Enable)
+       {
+        zDisableInput("BB_Reverse");
+        zDisableInput("BB_Operation_Mode");
+        zDisableInput("BB_Use_Mode");
+        zDisableInput("BB_Applied_Price");
+        zDisableInput("BB_Period");
+        zDisableInput("BB_Deviation_Multiplier");
+       }
+   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

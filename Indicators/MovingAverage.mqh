@@ -4,6 +4,7 @@
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
 #include "../Enums/IndicatorSignal.mqh"
+#include "../HelpFunctions/Input.mqh"
 
 enum ENUM_MA_USE_MODE
    {
@@ -12,7 +13,7 @@ enum ENUM_MA_USE_MODE
    };
 
 input group "1. Movel Average"
-input bool MA_Enable = false;                                                          // Enable MA
+sinput bool MA_Enable = false;                                                          // Enable MA
 input bool MA_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE MA_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_MA_USE_MODE MA_Use_Mode = MA_USE_MODE_ABOVE_BELOW;                          // Use Mode
@@ -73,6 +74,29 @@ int zMAInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
 //--- normal initialization of the indicator
     return(INIT_SUCCEEDED);
    }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zMAOnTesterInit()
+   {
+    if(!MA_Enable)
+       {
+        zDisableInput("MA_Reverse");
+        zDisableInput("MA_Operation_Mode");
+        zDisableInput("MA_Use_Mode");
+
+        zDisableInput("MA_Short_Method");
+        zDisableInput("MA_Short_Periods");
+        zDisableInput("MA_Short_Shift");
+        zDisableInput("MA_Short_Applied_Price");
+
+        zDisableInput("MA_Long_Method");
+        zDisableInput("MA_Long_Periods");
+        zDisableInput("MA_Long_Shift");
+        zDisableInput("MA_Long_Applied_Price");
+       }
+   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -83,10 +107,10 @@ void zMADeinit()
 
     if(MA_Long_Handler != INVALID_HANDLE)
         IndicatorRelease(MA_Long_Handler);
-    
+
     if(MA_HA_Short_Handler != INVALID_HANDLE)
         IndicatorRelease(MA_Long_Handler);
-    
+
     if(MA_HA_Long_Handler != INVALID_HANDLE)
         IndicatorRelease(MA_Long_Handler);
 

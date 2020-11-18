@@ -3,6 +3,8 @@
 //|                        Copyright 2020, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
+#include "../HelpFunctions/Input.mqh"
+
 enum ENUM_RSI_USE_MODE
    {
     RSI_USE_MODE_ABOVE_BELOW, // RSI Above/Below Levels
@@ -10,7 +12,7 @@ enum ENUM_RSI_USE_MODE
    };
 
 input group "7. RSI"
-input bool RSI_Enable = false;                                                          // Enable RSI
+sinput bool RSI_Enable = false;                                                          // Enable RSI
 input bool RSI_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE RSI_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_RSI_USE_MODE RSI_Use_Mode = RSI_USE_MODE_ABOVE_BELOW;                        // Use Mode
@@ -23,7 +25,6 @@ int RSI_Handler;
 int HA_RSI_Handler;
 double RSI_Buffer[];
 
-
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
@@ -31,6 +32,18 @@ int zRSIInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
    {
     if(RSI_Enable)
        {
+        if(RSI_Level_Oversold >= RSI_Level_Overbought)
+           {
+            Print("RSI Oversold level can't be higher than Overbought");
+            return INIT_PARAMETERS_INCORRECT;
+           }
+        if(RSI_Level_Oversold > 100
+           || RSI_Level_Overbought > 100)
+           {
+            Print("RSI Oversold or Overbought level can't be higher than 100");
+            return INIT_PARAMETERS_INCORRECT;
+           }
+
         ArraySetAsSeries(RSI_Buffer, true);
 
         //--- create handle of the indicator
@@ -57,6 +70,25 @@ int zRSIInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
     return(INIT_SUCCEEDED);
    }
 
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zRSIOnTesterInit()
+   {
+    zSetInputRangeStop("RSI_Level_Oversold", 100);
+    zSetInputRangeStop("RSI_Level_Overbought", 100);
+
+    if(!RSI_Enable)
+       {
+        zDisableInput("RSI_Reverse");
+        zDisableInput("RSI_Operation_Mode");
+        zDisableInput("RSI_Use_Mode");
+        zDisableInput("RSI_Applied_Price");
+        zDisableInput("RSI_Periods");
+        zDisableInput("RSI_Level_Oversold");
+        zDisableInput("RSI_Level_Overbought");
+       }
+   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

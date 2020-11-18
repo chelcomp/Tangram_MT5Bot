@@ -4,6 +4,7 @@
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
 #include "../HelpFunctions/Array.mqh"
+#include "../HelpFunctions/Input.mqh"
 
 enum ENUM_HILO_USE_MODE
    {
@@ -12,7 +13,7 @@ enum ENUM_HILO_USE_MODE
    };
 
 input group "2. HiLo Activator"
-input bool HILO_Enable = false;                                                           // Enable HILO
+sinput bool HILO_Enable = false;                                                           // Enable HILO
 input bool HILO_Reverse = false;                                                           // Reverse
 input ENUM_INDICATOR_OPERATION_MODE HILO_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH;  // Operation Mode
 input ENUM_HILO_USE_MODE HILO_Use_Mode = HILO_USE_MODE_CROSSING;                          // Use Mode
@@ -69,7 +70,19 @@ int zHiLoInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
 //--- normal initialization of the indicator
     return(INIT_SUCCEEDED);
    }
-
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zHILOOnTesterInit()
+   {
+    if(!HILO_Enable)
+       {
+        zDisableInput("HILO_Reverse");
+        zDisableInput("HILO_Operation_Mode");
+        zDisableInput("HILO_Use_Mode");
+        zDisableInput("HILO_Periods");
+       }
+   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+

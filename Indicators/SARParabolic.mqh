@@ -3,6 +3,7 @@
 //|                        Copyright 2020, MetaQuotes Software Corp. |
 //|                                             https://www.mql5.com |
 //+------------------------------------------------------------------+
+#include "../HelpFunctions/Input.mqh"
 
 enum ENUM_SAR_USE_MODE
    {
@@ -11,7 +12,7 @@ enum ENUM_SAR_USE_MODE
    };
 
 input group "10. SAR Parabolic"
-input bool SAR_Enable = false;                                                          // Enable SAR
+sinput bool SAR_Enable = false;                                                          // Enable SAR
 input bool SAR_Reverse = false;                                                          // Reverse
 input ENUM_INDICATOR_OPERATION_MODE SAR_Operation_Mode = INDICATOR_OPERATION_MODE_BOTH; // Operation Mode
 input ENUM_SAR_USE_MODE SAR_Use_Mode = SAR_USE_MODE_DIRECTION_CHANGE;                   // Use Mode
@@ -49,7 +50,20 @@ int zSARInit(ENUM_TIMEFRAMES timeframe)
 //--- normal initialization of the indicator
     return(INIT_SUCCEEDED);
    }
-
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void zSAROnTesterInit()
+   {
+    if(!SAR_Enable)
+       {
+        zDisableInput("SAR_Reverse");
+        zDisableInput("SAR_Operation_Mode");
+        zDisableInput("SAR_Use_Mode");
+        zDisableInput("SAR_Increment_Step");
+        zDisableInput("SAR_Limit_Maximum");
+       }
+   }
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
