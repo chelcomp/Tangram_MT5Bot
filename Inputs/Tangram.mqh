@@ -27,8 +27,8 @@ enum ENUM_GRAPH_TYPE
    
 enum ENUM_CLOSE_POSITION_BY_INDICATOR
 {
-   CLOSE_POSITION_BY_INDICATOR_ANY, // Close by Any Indicator
-   CLOSE_POSITION_BY_INDICATOR_ALL  // Close by All Indicator Together
+   CLOSE_POSITION_BY_INDICATOR_ANY, // By Any Indicator
+   CLOSE_POSITION_BY_INDICATOR_ALL  // By All Indicator Together
 };
    
 sinput string Comment1 = "NOT PRODUCTION ENABLED"; // Tangram Bot - Only for study ( Demo Account ) on B3 and MBF
@@ -74,7 +74,7 @@ sinput group "TECHNICAL INDICATORS ---------------------------------------------
 
 sinput group "TRADE RISK MANAGEMENT ---------------------------------------------------"
 input group "Output Criterias"
-input ENUM_CLOSE_POSITION_BY_INDICATOR OUT_Close_Position_By_Indicator = CLOSE_POSITION_BY_INDICATOR_ANY; // Close Positiob By Indicator
+input ENUM_CLOSE_POSITION_BY_INDICATOR OUT_Close_Position_By_Indicator = CLOSE_POSITION_BY_INDICATOR_ANY; // Close Position By Indicator
 input bool OUT_Use_Reverse = true;   // Allow Reverse Order
 input int  OUT_Martingale_Times = 0; // Martingale: Maximum number of consecutive losses with position increase
 #include "../RiskManagement/Trade.mqh";
@@ -89,7 +89,7 @@ input group "Custom Optimization: Monte Carlo"
 input group "Backtesting Setting (Custom Criteria)"
 sinput long SETTING_MagicNumber = -1; // Magic Number
 /*
-sinput bool   SETTING_Backtesting_Stop_On_Negative_Equity = true;      // Stop to backtesting when Equity is over (When Account is Zero)
+sinput bool   SETTING_Backtesting_Stop_On_Negative_Equity = true;    // Stop to backtesting when Equity is over (When Account is Zero)
 sinput double SETTING_Backtesting_Stop_On_Max_Drowndow_Percent = 30; // Stop to backtestig when Drowndown higher than %
 sinput double SETTING_Backtesting_Expected_AVG_Deal_by_Day = 1.5;    // Average deal by day to ranking up
 */

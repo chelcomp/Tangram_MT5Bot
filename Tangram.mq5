@@ -7,7 +7,7 @@
 //+------------------------------------------------------------------+
 //|  PROPERTIES                                                      |
 //+------------------------------------------------------------------+
-#property version "100.005"
+#property version "100.006"
 #property description "Tangram Bot ( Mimic SmartBot Tangram Bot )"
 #property script_show_inputs
 //---
@@ -52,14 +52,15 @@ static bool g_is_new_candle, g_daily_risk_triggered;
 static int g_day_trade_count = 0;
 static ulong g_magic_number = -1;
 
-datetime g_trial_date = D'2020.12.31';
+datetime g_trial_date = __DATE__; //  D'2020.12.31';
 
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
-   if(TimeCurrent() >= g_trial_date)
+   g_trial_date += 30*24*60*60;
+   if(TimeCurrent() >= g_trial_date) // 30 dias apartir da data de build
      {
       MessageBox("Demo expired","Warning !");
       Print("This bot version is expired.");
@@ -246,6 +247,13 @@ void OnTick()
       return;
      }
 
+//-- Create Limit Close Order
+   if(STOP_Gain_Order_Type == ORDER_MARKET_TYPE_LIMIT
+      && PositionsTotal() > 0 && OrdersTotal() == 0)
+     {
+      zLimitCloseOrder();
+     }
+
 //-- Create new Order
    if(PositionsTotal() == 0 && OrdersTotal() == 0
       && can_open_position_time_window
@@ -386,6 +394,35 @@ bool zCreateOrder(bool buy, bool sell)
    return Trade.Sell(volume);
 
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool zLimitCloseOrder()
+  {
+   if(STOP_Gain_Order_Type != ORDER_MARKET_TYPE_LIMIT && STOP_Gain > 0)
+      return false;
+
+   double volume = ORDER_Volume;
+//volume  = zNomalizeSymbolVolume(volume);
+
+   double price = PositionInfo.PriceOpen();
+
+   Trade.SetDeviationInPoints(ULONG_MAX);
+   if(PositionInfo.PositionType() == POSITION_TYPE_SELL)
+     {
+      price = price - zNormalizeValues(STOP_Gain);
+      return Trade.BuyLimit(volume, price);
+     }
+
+   if(PositionInfo.PositionType() == POSITION_TYPE_BUY)
+     {
+      price = price + zNormalizeValues(STOP_Gain);
+      return Trade.SellLimit(volume, price);
+     }
+
+   return false;
   }
 
 //+------------------------------------------------------------------+
@@ -573,7 +610,7 @@ void zIndicatorsSignal(bool & buy, bool & sell, bool & close)
                close = true;
                if((position_type == POSITION_TYPE_BUY && indicator_signals[i] == INDICATOR_SIGNAL_BUY)
                   || (position_type == POSITION_TYPE_SELL && indicator_signals[i] == INDICATOR_SIGNAL_SELL)
-                  )
+                 )
                  {
                   close = false;
                   continue;
