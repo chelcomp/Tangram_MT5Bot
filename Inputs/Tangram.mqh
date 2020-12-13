@@ -25,6 +25,12 @@ enum ENUM_GRAPH_TYPE
     GRAPH_TYPE_HEIKINASHI   // Heikin-Ashi (NOT Smoothed)
    };
    
+enum ENUM_CLOSE_POSITION_BY_INDICATOR
+{
+   CLOSE_POSITION_BY_INDICATOR_ANY, // Close by Any Indicator
+   CLOSE_POSITION_BY_INDICATOR_ALL  // Close by All Indicator Together
+};
+   
 sinput string Comment1 = "NOT PRODUCTION ENABLED"; // Tangram Bot - Only for study ( Demo Account ) on B3 and MBF
 sinput string Comment2 = "This bot was created based on options available on Tangram bot, but there is no guarantee of equivalency."; // Disclaimer: No relation with Smarttbot.com.br
 sinput string Comment3 = "michelpurper@gmail.com"; // Developper Contact
@@ -68,6 +74,7 @@ sinput group "TECHNICAL INDICATORS ---------------------------------------------
 
 sinput group "TRADE RISK MANAGEMENT ---------------------------------------------------"
 input group "Output Criterias"
+input ENUM_CLOSE_POSITION_BY_INDICATOR OUT_Close_Position_By_Indicator = CLOSE_POSITION_BY_INDICATOR_ANY; // Close Positiob By Indicator
 input bool OUT_Use_Reverse = true;   // Allow Reverse Order
 input int  OUT_Martingale_Times = 0; // Martingale: Maximum number of consecutive losses with position increase
 #include "../RiskManagement/Trade.mqh";

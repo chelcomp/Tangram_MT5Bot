@@ -114,7 +114,7 @@ ENUM_INDICATOR_SIGNAL zVWAP()
                 if(rates[1].close > vwap)
                     indicator_signal = INDICATOR_SIGNAL_BUY;
            }
-        else
+        else //Rupture
            {
             CopyRates(Symbol(), VWAP_Timeframe, 0, 3, rates);
             if(VWAP_Use_Mode == VWAP_USE_MODE_RUPTURE)

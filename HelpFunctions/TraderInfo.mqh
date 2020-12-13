@@ -94,7 +94,7 @@ int zTodayDealsTotal(ulong magic_number)
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-int zTodayClosedDealsTotal(ulong magic_number)
+int zTodayClosedDealsTotal() //ulong magic_number)
    {
     int history_deals_total = zTodayDealsTotal();
     int t = 0;
@@ -102,7 +102,7 @@ int zTodayClosedDealsTotal(ulong magic_number)
     for(int i = 0; i < history_deals_total; i++)
        {
         ulong deal_ticket = HistoryDealGetTicket(i);
-        if(HistoryDealGetInteger(deal_ticket, DEAL_MAGIC) == magic_number)
+        //if(HistoryDealGetInteger(deal_ticket, DEAL_MAGIC) == magic_number)
            {
             ENUM_DEAL_ENTRY deal_entry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(deal_ticket, DEAL_ENTRY) ;
             if(deal_entry == DEAL_ENTRY_IN || deal_entry == DEAL_ENTRY_INOUT)

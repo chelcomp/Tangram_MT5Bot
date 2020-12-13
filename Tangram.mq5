@@ -7,7 +7,7 @@
 //+------------------------------------------------------------------+
 //|  PROPERTIES                                                      |
 //+------------------------------------------------------------------+
-#property version "100.001"
+#property version "100.005"
 #property description "Tangram Bot ( Mimic SmartBot Tangram Bot )"
 #property script_show_inputs
 //---
@@ -52,11 +52,20 @@ static bool g_is_new_candle, g_daily_risk_triggered;
 static int g_day_trade_count = 0;
 static ulong g_magic_number = -1;
 
+datetime g_trial_date = D'2020.12.31';
+
 //+------------------------------------------------------------------+
 //| Expert initialization function                                   |
 //+------------------------------------------------------------------+
 int OnInit()
   {
+   if(TimeCurrent() >= g_trial_date)
+     {
+      MessageBox("Demo expired","Warning !");
+      Print("This bot version is expired.");
+      return(INIT_FAILED);
+     }
+
    if(MQLInfoInteger(MQL_OPTIMIZATION) || MQLInfoInteger(MQL_FORWARD))
       ChartSetSymbolPeriod(0, _Symbol, PERIOD_M1);
    else
@@ -73,7 +82,7 @@ int OnInit()
          Print("Stoping...");
          return(INIT_FAILED);
         }
-        
+
 //--- prepare trade class to control positions if hedging mode is active
 //ExtHedging = ((ENUM_ACCOUNT_MARGIN_MODE)AccountInfoInteger(ACCOUNT_MARGIN_MODE) == ACCOUNT_MARGIN_MODE_RETAIL_HEDGING);
    Trade.SetExpertMagicNumber(SETTING_MagicNumber);
@@ -173,6 +182,16 @@ double OnTester(void)
 //+------------------------------------------------------------------+
 void OnTick()
   {
+//+------------------------------------------------------------------+
+//| TRIAL VERION VERIFICATION                                        |
+//+------------------------------------------------------------------+
+   if(TimeCurrent() >= g_trial_date)
+     {
+      MessageBox("Demo expired","Warning !");
+      Print("This bot version is expired. Please contact the developer to get a new version.");
+      ExpertRemove();
+     }
+
    g_is_new_candle = zIsNewCandle(TimeFrame);
    if(PositionsTotal() <= 0 && !g_is_new_candle)
       return;
@@ -198,7 +217,7 @@ void OnTick()
    bool can_reverse = zCanReversePosition();
    bool can_open_position_time_window = zCanOpenPositionTimeWindow();
 
-   if(!close)
+   if(!close && g_is_new_candle)
       zIndicatorsSignal(buy, sell, close);
 
    if(can_open_position_time_window && can_reverse)
@@ -546,13 +565,32 @@ void zIndicatorsSignal(bool & buy, bool & sell, bool & close)
       indicator_signals[9] = zIndicadorSignalNormalizer_OUT(vwap, VWAP_Operation_Mode);
 
       for(int i = 0; i < 10; i++)
-         if((position_type == POSITION_TYPE_BUY && indicator_signals[i] == INDICATOR_SIGNAL_SELL)
-            || (position_type == POSITION_TYPE_SELL && indicator_signals[i] == INDICATOR_SIGNAL_BUY)
-           )
+        {
+         if(OUT_Close_Position_By_Indicator == CLOSE_POSITION_BY_INDICATOR_ALL) // Out by All indicator
            {
-            close = true;
-            break;
+            if(indicator_signals[i] != INDICATOR_SIGNAL_NEUTRAL_BLOCK && indicator_signals[i] != INDICATOR_SIGNAL_NEUTRAL_ALLOW)
+              {
+               close = true;
+               if((position_type == POSITION_TYPE_BUY && indicator_signals[i] == INDICATOR_SIGNAL_BUY)
+                  || (position_type == POSITION_TYPE_SELL && indicator_signals[i] == INDICATOR_SIGNAL_SELL)
+                  )
+                 {
+                  close = false;
+                  continue;
+                 }
+              }
            }
+         else // OUT_Close_Position_By_Indicator == CLOSE_POSITION_BY_INDICATOR_ANY
+           {
+            if((position_type == POSITION_TYPE_BUY && indicator_signals[i] == INDICATOR_SIGNAL_SELL)
+               || (position_type == POSITION_TYPE_SELL && indicator_signals[i] == INDICATOR_SIGNAL_BUY)
+              )
+              {
+               close = true;
+               break;
+              }
+           }
+        }
      }
    /*
        if(ORDER_Block_New_Inputs_On_Same_Day)

@@ -35,10 +35,13 @@ int zHiLoInit(ENUM_TIMEFRAMES timeframe, bool use_heikin_ashi)
    {
     if(HILO_Enable)
        {
+        ArrayResize(HILO_Buffer, HILO_Periods + 1);
+
         ArraySetAsSeries(HILO_Hi_Buffer, true);
         ArraySetAsSeries(HILO_Lo_Buffer, true);
         ArraySetAsSeries(HILO_Buffer, true);
-        ArrayResize(HILO_Buffer, HILO_Periods);
+        ArrayInitialize(HILO_Hi_Buffer, 0);
+        ArrayInitialize(HILO_Lo_Buffer, 0);
         ArrayInitialize(HILO_Buffer, 0);
 
         HILO_Timeframe = timeframe;
@@ -128,7 +131,7 @@ ENUM_INDICATOR_SIGNAL zHILO()
                          : rates[1].close > HILO_Hi_Buffer[1] ? -1
                          : HILO_Buffer[2];
     HILO_Buffer[1] = hilo_direction;
-
+ 
     if(HILO_Use_Mode == HILO_USE_MODE_ABOVE_BELOW)
        {
         if(HILO_Buffer[1] > 0)

@@ -145,7 +145,7 @@ bool zDailyRiskEvent(ulong magic_number)
         return true;
 
 // Stop after X Deals
-    int today_deals_totals = zTodayClosedDealsTotal(g_magic_number);
+    int today_deals_totals = zTodayClosedDealsTotal(); //g_magic_number);
     if(RISK_Stop_After_X_Deals > 0
        && RISK_Stop_After_X_Deals_Mode != STOP_AFTER_X_DEALS_NONE
        && today_deals_totals >= RISK_Stop_After_X_Deals)

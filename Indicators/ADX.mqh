@@ -59,7 +59,7 @@ int zADXInit(ENUM_TIMEFRAMES timeframe)
         ArraySetAsSeries(ADX_Buffer, true);
 
         //--- create handle of the indicator
-        ADX_Handler = iADXWilder(_Symbol, timeframe, ADX_Period);
+        ADX_Handler = iADX(_Symbol, timeframe, ADX_Period);
 
         //--- if the handle is not created
         if(ADX_Handler == INVALID_HANDLE)
