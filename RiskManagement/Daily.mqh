@@ -131,7 +131,7 @@ int zDailyInit()
 //+------------------------------------------------------------------+
 bool zDailyRiskEvent(ulong magic_number)
   {
-   double daily_net_profit = zCurrentDayNetProfit(magic_number);
+   double daily_net_profit = zCurrentDayNetProfit(); //(magic_number);
    double variable_net_profit = daily_net_profit + PositionInfo.Profit() - PositionInfo.Commission();
 
 //-- Stop Loss

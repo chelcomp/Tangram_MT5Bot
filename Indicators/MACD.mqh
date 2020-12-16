@@ -142,14 +142,12 @@ ENUM_INDICATOR_SIGNAL zMACD()
        }
     else // if(MACD_Use_Mode == MACD_USE_MODE_CROSSING)
        {
-        if(MACD_Signal_Buffer[1] < MACD_Buffer[1] && MACD_Signal_Buffer[2] > MACD_Buffer[2])
+        if(MathRound( MACD_Signal_Buffer[1]) <= MathRound( MACD_Buffer[1]) && MathRound( MACD_Signal_Buffer[2]) > MathRound( MACD_Buffer[2]))
             indicator_signal = INDICATOR_SIGNAL_SELL;
         else
-            if(MACD_Signal_Buffer[1] > MACD_Buffer[1] && MACD_Signal_Buffer[2] < MACD_Buffer[2])
+            if(MathRound( MACD_Signal_Buffer[1]) >= MathRound( MACD_Buffer[1]) && MathRound( MACD_Signal_Buffer[2]) < MathRound( MACD_Buffer[2]))
                 indicator_signal = INDICATOR_SIGNAL_BUY;
        }
-
-
 
     if(MACD_Reverse)
         indicator_signal = indicator_signal == INDICATOR_SIGNAL_SELL ? INDICATOR_SIGNAL_BUY
@@ -162,21 +160,21 @@ ENUM_INDICATOR_SIGNAL zMACD()
 //+------------------------------------------------------------------+
 //|                                                                  |
 //+------------------------------------------------------------------+
-ENUM_INDICATOR_SIGNAL zMACDFilter()
+ENUM_INDICATOR_SIGNAL zMACDFilter(ENUM_INDICATOR_SIGNAL macd_indicator_signal)
    {
     if(!MACD_Enable)
         return INDICATOR_SIGNAL_NEUTRAL_ALLOW;
     ENUM_INDICATOR_SIGNAL indicator_signal = INDICATOR_FILTER_ALLOW;
 
     if(MACD_Filter)
-        if(indicator_signal == INDICATOR_SIGNAL_SELL
-           && MACD_Buffer[1] < MACD_Filter_Value)
+        if(macd_indicator_signal == INDICATOR_SIGNAL_SELL
+           && MACD_Buffer[1] > MACD_Filter_Value)
            {
             indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
            }
         else
-            if(indicator_signal == INDICATOR_SIGNAL_BUY
-               && MACD_Buffer[1] > MACD_Filter_Value)
+            if(macd_indicator_signal == INDICATOR_SIGNAL_BUY
+               && MACD_Buffer[1] < MACD_Filter_Value)
                {
                 indicator_signal = INDICATOR_SIGNAL_NEUTRAL_BLOCK;
                }

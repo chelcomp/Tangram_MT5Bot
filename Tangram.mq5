@@ -7,7 +7,7 @@
 //+------------------------------------------------------------------+
 //|  PROPERTIES                                                      |
 //+------------------------------------------------------------------+
-#property version "100.006"
+#property version "100.009"
 #property description "Tangram Bot ( Mimic SmartBot Tangram Bot )"
 #property script_show_inputs
 //---
@@ -262,7 +262,7 @@ void OnTick()
       //-- Check to Block_New_Inputs_On_Same_Day
       if((buy || sell) && ORDER_Block_New_Inputs_On_Same_Day)
         {
-         ENUM_DEAL_TYPE last_deal_type = zLastDealType(g_magic_number);
+         ENUM_DEAL_TYPE last_deal_type = zTodayLastDealEntryType();//(g_magic_number);
 
          if(last_deal_type == DEAL_TYPE_BUY && buy)
             buy = false;
@@ -435,7 +435,7 @@ int zMartigaleMultiplier()
      {
       if(zMartigaleMultipler <= OUT_Martingale_Times)
         {
-         int history_deals_total = zTodayDealsTotal(g_magic_number);
+         int history_deals_total = zTodayDealsTotal();
          ulong ticket = HistoryDealGetTicket(history_deals_total - 1);
          double last_profit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
          if(ticket > 0 && last_profit < 0)
@@ -541,7 +541,7 @@ void zIndicatorsSignal(bool & buy, bool & sell, bool & close)
 
    ENUM_INDICATOR_SIGNAL hilo = zHILO();
    ENUM_INDICATOR_SIGNAL macd = zMACD();
-   ENUM_INDICATOR_SIGNAL macd_filter = zMACDFilter();
+   ENUM_INDICATOR_SIGNAL macd_filter = zMACDFilter(macd);
 
    ENUM_INDICATOR_SIGNAL ma = zMA();
    ENUM_INDICATOR_SIGNAL rsi = zRSI();
