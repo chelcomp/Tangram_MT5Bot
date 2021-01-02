@@ -38,7 +38,7 @@ double zCurrentDayNetProfit() //ulong magic_number)
         {
          //deal.time = (datetime)HistoryDealGetInteger(ticket, DEAL_TIME);
          ENUM_DEAL_ENTRY entry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(ticket, DEAL_ENTRY);
-         if(entry == DEAL_ENTRY_OUT)
+         if(entry == DEAL_ENTRY_OUT || entry == DEAL_ENTRY_INOUT)
            {
             double profit = HistoryDealGetDouble(ticket, DEAL_PROFIT);
             double commission = HistoryDealGetDouble(ticket, DEAL_COMMISSION);
@@ -85,11 +85,11 @@ int zTodayClosedDealsTotal() //ulong magic_number)
      {
       ulong deal_ticket = HistoryDealGetTicket(i);
       //if(HistoryDealGetInteger(deal_ticket, DEAL_MAGIC) == magic_number)
-        {
-         ENUM_DEAL_ENTRY deal_entry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(deal_ticket, DEAL_ENTRY) ;
-         if(deal_entry == DEAL_ENTRY_IN || deal_entry == DEAL_ENTRY_INOUT)
-            t++;
-        }
+      //{
+      ENUM_DEAL_ENTRY deal_entry = (ENUM_DEAL_ENTRY)HistoryDealGetInteger(deal_ticket, DEAL_ENTRY) ;
+      if(deal_entry == DEAL_ENTRY_IN || deal_entry == DEAL_ENTRY_INOUT)
+         t++;
+      //}
      }
 
    if(t > 0 && PositionsTotal() > 0)
@@ -119,9 +119,9 @@ ENUM_DEAL_TYPE zTodayLastDealEntryType()//(ulong magic_number)
 
             if(deal_entry == DEAL_ENTRY_IN || deal_entry == DEAL_ENTRY_INOUT)
               {
-               //if(last_deal_type == DEAL_TYPE_BUY || last_deal_type == DEAL_TYPE_SELL)                 
-                  return last_deal_type;
-                 
+               //if(last_deal_type == DEAL_TYPE_BUY || last_deal_type == DEAL_TYPE_SELL)
+               return last_deal_type;
+
               }
            }
         }

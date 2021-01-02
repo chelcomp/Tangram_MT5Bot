@@ -30,7 +30,13 @@ enum ENUM_CLOSE_POSITION_BY_INDICATOR
    CLOSE_POSITION_BY_INDICATOR_ANY, // By Any Indicator
    CLOSE_POSITION_BY_INDICATOR_ALL  // By All Indicator Together
 };
-   
+
+enum ENUM_ORDER_INPUT_TYPE
+  {
+   ORDER_INPUT_TYPE_MARKET, // Market
+   ORDER_INPUT_TYPE_LIMIT   // Limit
+  };
+  
 sinput string Comment1 = "NOT PRODUCTION ENABLED"; // Tangram Bot - Only for study ( Demo Account ) on B3 and MBF
 sinput string Comment2 = "This bot was created based on options available on Tangram bot, but there is no guarantee of equivalency."; // Disclaimer: No relation with Smarttbot.com.br
 sinput string Comment3 = "michelpurper@gmail.com"; // Developper Contact
@@ -56,11 +62,15 @@ input group "Order Management"
 input ENUM_ORDER_MANAGEMENT_TYPE ORDER_Management_Type = ORDER_MANAGEMENT_TYPE_FIXED_VOLUME;   // Volume Type
 input ENUM_OPERATION_DIRECTION ORDER_Operation_Direction = OPERATION_DIRECTION_BOTH;           // Operation Direction
 input double ORDER_Volume = 2;                                                                 // Volume
+
 input bool ORDER_Block_New_Inputs_On_Same_Day = false;                                         // Block new inputs on the same day after one output
+
+input ENUM_ORDER_INPUT_TYPE ORDER_Input_Type = ORDER_INPUT_TYPE_MARKET;      // Order Type
+input double ORDER_Input_Spread = 0.15;      // Order Type: Limit Spread
+input int ORDER_Input_Limit = 60;            // Order Type: Limit Seconds
 //+------------------------------------------------------------------+
 
 sinput group "TECHNICAL INDICATORS ---------------------------------------------------"
-//-- "Moving Average"
 #include "../Indicators/MovingAverage.mqh"
 #include "../Indicators/HiLoActivator.mqh"
 #include "../Indicators/MACD.mqh"

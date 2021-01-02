@@ -7,7 +7,7 @@
 //+------------------------------------------------------------------+
 //|  PROPERTIES                                                      |
 //+------------------------------------------------------------------+
-#property version "100.009"
+#property version "100.010"
 #property description "Tangram Bot ( Mimic SmartBot Tangram Bot )"
 #property script_show_inputs
 //---
@@ -193,6 +193,10 @@ void OnTick()
       ExpertRemove();
      }
 
+   if(ORDER_Input_Type == ORDER_INPUT_TYPE_LIMIT && OrdersTotal() > 0 && PositionsTotal() <= 0)
+      zCancelAllPendingInputLimitOrders();
+
+
    g_is_new_candle = zIsNewCandle(TimeFrame);
    if(PositionsTotal() <= 0 && !g_is_new_candle)
       return;
@@ -225,15 +229,23 @@ void OnTick()
      {
       if((buy || sell) && OUT_Use_Reverse)
         {
-         bool reverse_order_creates = zReversePosition(buy, sell);
-         if(reverse_order_creates)
-            return;
+         if(!zStopAfterXDealsCurrentProfit())
+           {
+            zCancelAllPendingOrders();
+            bool reverse_order_creates = zReversePosition(buy, sell);
+            if(reverse_order_creates)
+               return;
+           }
+         else
+           {
+            close = true;
+           }
         }
      }
 
    if(close)
      {
-      zCancelAllPendingOrders();
+      //zCancelAllPendingOrders();
       zCloseAllOpenPositions();
       return;
      }
@@ -271,7 +283,10 @@ void OnTick()
         }
 
       if(buy || sell)
+        {
+         //zCancelAllPendingOrders();
          zCreateOrder(buy, sell);
+        }
      }
   }
 
@@ -306,6 +321,32 @@ bool zCancelAllPendingOrders()
       return Trade.OrderDelete(ticket);
      }
    return true;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool zCancelAllPendingInputLimitOrders()
+  {
+   bool orderCanceled = false;
+   for(int i = OrdersTotal() - 1; i >= 0; i--)
+     {
+      ulong ticket = OrderGetTicket(i);
+      if(ticket > 0)
+        {
+         if(OrderGetString(ORDER_SYMBOL) == _Symbol
+            && OrderGetInteger(ORDER_MAGIC) == Trade.RequestMagic())
+           {
+            if(OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_BUY_LIMIT ||
+               OrderGetInteger(ORDER_TYPE) == ORDER_TYPE_SELL_LIMIT)
+              {
+               if(OrderGetInteger(ORDER_TIME_SETUP) + ORDER_Input_Limit < TimeTradeServer())
+                  orderCanceled = orderCanceled | Trade.OrderDelete(ticket);
+              }
+           }
+        }
+     }
+   return orderCanceled;
   }
 
 //+------------------------------------------------------------------+
@@ -388,11 +429,34 @@ bool zCreateOrder(bool buy, bool sell)
    volume = zNomalizeSymbolVolume(volume);
 
    Trade.SetDeviationInPoints(ULONG_MAX);
-   if(buy)
-      return Trade.Buy(volume);
-//-- else if(sell)
-   return Trade.Sell(volume);
+   if(ORDER_Input_Type == ORDER_INPUT_TYPE_MARKET)
+     {
+      if(buy)
+         return Trade.Buy(volume);
 
+      //-- else if(sell)
+      return Trade.Sell(volume);
+     }
+
+   else
+      if(ORDER_Input_Type == ORDER_INPUT_TYPE_LIMIT)
+        {
+         double last_price = SymbolInfoDouble(_Symbol, SYMBOL_LAST);
+         datetime d = TimeTradeServer();
+         datetime expiration = TimeTradeServer() + ORDER_Input_Limit;
+
+         if(buy)
+           {
+            last_price =  zNomalizeSymbolPrice(last_price - ORDER_Input_Spread);
+            return Trade.BuyLimit(volume, last_price, _Symbol, 0, 0, ORDER_TIME_SPECIFIED, expiration);
+           }
+
+         else // Sell
+           {
+            last_price = zNomalizeSymbolPrice(last_price + ORDER_Input_Spread);
+            return Trade.SellLimit(volume, last_price, _Symbol, 0, 0, ORDER_TIME_SPECIFIED, expiration);
+           }
+        }
    return true;
   }
 
@@ -467,11 +531,34 @@ bool zReversePosition(bool buy, bool sell)
    volume  = zNomalizeSymbolVolume(volume);
 
    Trade.SetDeviationInPoints(ULONG_MAX);
-   if(PositionInfo.PositionType() == POSITION_TYPE_SELL && buy)
-      return Trade.Buy(volume);
 
-   if(PositionInfo.PositionType() == POSITION_TYPE_BUY && sell)
-      return Trade.Sell(volume);
+   if(ORDER_Input_Type == ORDER_INPUT_TYPE_MARKET)
+     {
+      if(PositionInfo.PositionType() == POSITION_TYPE_SELL && buy)
+         return Trade.Buy(volume);
+
+      if(PositionInfo.PositionType() == POSITION_TYPE_BUY && sell)
+         return Trade.Sell(volume);
+     }
+
+   else
+      if(ORDER_Input_Type == ORDER_INPUT_TYPE_LIMIT)
+        {
+         double last_price = SymbolInfoDouble(_Symbol, SYMBOL_LAST);
+         datetime expiration = TimeTradeServer() + ORDER_Input_Limit;
+
+         if(PositionInfo.PositionType() == POSITION_TYPE_SELL && buy)
+           {
+            last_price =  zNomalizeSymbolPrice(last_price - ORDER_Input_Spread);
+            return Trade.BuyLimit(volume, last_price, _Symbol, 0, 0, ORDER_TIME_SPECIFIED, expiration);
+           }
+
+         if(PositionInfo.PositionType() == POSITION_TYPE_BUY && sell)
+           {
+            last_price = zNomalizeSymbolPrice(last_price + ORDER_Input_Spread);
+            return Trade.SellLimit(volume, last_price, _Symbol, 0, 0, ORDER_TIME_SPECIFIED, expiration);
+           }
+        }
 
    return false;
   }

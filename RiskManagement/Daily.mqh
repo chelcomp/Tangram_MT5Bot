@@ -124,6 +124,43 @@ int zDailyInit()
 
    return(INIT_SUCCEEDED);
   }
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool zStopAfterXDealsCurrentProfit()
+  {
+   double daily_net_profit = zCurrentDayNetProfit(); //(magic_number);
+   double variable_net_profit = daily_net_profit + PositionInfo.Profit() - PositionInfo.Commission();
+   int today_deals_totals = zTodayClosedDealsTotal() + 1;
+   if(zStopAfterXDeals(today_deals_totals, variable_net_profit))
+     {
+      return true;
+     }
+   return false;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+bool zStopAfterXDeals(int today_deals_totals, double daily_net_profit)
+  {
+   if(RISK_Stop_After_X_Deals > 0
+      && RISK_Stop_After_X_Deals_Mode != STOP_AFTER_X_DEALS_NONE
+      && today_deals_totals >= RISK_Stop_After_X_Deals)
+     {
+      if(RISK_Stop_After_X_Deals_Mode == STOP_AFTER_X_DEALS_WINNING
+         && daily_net_profit > 0)
+         return true;
+
+      if(RISK_Stop_After_X_Deals_Mode == STOP_AFTER_X_DEALS_LOSSING
+         && daily_net_profit < 0)
+         return true;
+
+      if(RISK_Stop_After_X_Deals_Mode == STOP_AFTER_X_DEALS_BOTH)
+         return true;
+     }
+   return false;
+  }
 
 //+------------------------------------------------------------------+
 //|  Check all daily Risk parameters                                 |
@@ -146,20 +183,9 @@ bool zDailyRiskEvent(ulong magic_number)
 
 // Stop after X Deals
    int today_deals_totals = zTodayClosedDealsTotal(); //g_magic_number);
-   if(RISK_Stop_After_X_Deals > 0
-      && RISK_Stop_After_X_Deals_Mode != STOP_AFTER_X_DEALS_NONE
-      && today_deals_totals >= RISK_Stop_After_X_Deals)
+   if(zStopAfterXDeals(today_deals_totals, daily_net_profit))
      {
-      if(RISK_Stop_After_X_Deals_Mode == STOP_AFTER_X_DEALS_WINNING
-         && daily_net_profit > 0)
-         return true;
-
-      if(RISK_Stop_After_X_Deals_Mode == STOP_AFTER_X_DEALS_LOSSING
-         && daily_net_profit < 0)
-         return true;
-
-      if(RISK_Stop_After_X_Deals_Mode == STOP_AFTER_X_DEALS_BOTH)
-         return true;
+      return true;
      }
 
 //-- Daily Breakeven
